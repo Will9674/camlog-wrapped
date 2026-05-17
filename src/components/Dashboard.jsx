@@ -105,6 +105,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   )
 
   return (
+    <>
     <div className="min-h-screen flex flex-col bg-[#f0ece4] no-print">
       {/* Top bar */}
       <header className="relative bg-[#1a1916] px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
@@ -201,5 +202,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       </div>
     </div>
     <PrintLayout ref={printRef} rows={filteredRows} stats={stats} projectTitle={projectTitle} />
+    </>
   )
 }

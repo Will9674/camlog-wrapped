@@ -13,7 +13,7 @@ export default function App() {
     return name
       .replace(/\.csv$/i, '')
       .replace(/[-_]+/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .toUpperCase()
   }
 
   async function handleFile(file) {

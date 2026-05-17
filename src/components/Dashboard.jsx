@@ -79,7 +79,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           CineLog Wrapped
         </span>
         {projectTitle && (
-          <span className="absolute left-1/2 -translate-x-1/2 font-['DM_Mono'] text-lg font-medium text-white tracking-tight">
+          <span className="absolute left-1/2 -translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-white tracking-tight">
             {projectTitle}
           </span>
         )}

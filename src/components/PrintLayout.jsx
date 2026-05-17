@@ -53,7 +53,7 @@ function HorizPrintChart({ data }) {
       height={height}
       data={formatted}
       layout="vertical"
-      margin={{ top: 4, right: 165, bottom: 4, left: 4 }}
+      margin={{ top: 4, right: 185, bottom: 4, left: 4 }}
       barSize={barHeight}
     >
       <XAxis
@@ -93,7 +93,7 @@ function VertPrintChart({ data }) {
     return `${parseInt(m)}/${parseInt(day)}`
   }
 
-  const showLabels = data.length <= 20
+  const showLabels = data.length <= 30
 
   return (
     <BarChart

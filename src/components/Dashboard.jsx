@@ -25,21 +25,27 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     if (!el || exporting) return
     setExporting(true)
     try {
-      // Move off-screen but keep visible so html2canvas can capture it
-      el.style.left = '-9999px'
+      // Bring on-screen so Recharts SVGs render fully before capture
+      el.style.position = 'fixed'
+      el.style.left = '0'
       el.style.top = '0'
       el.style.visibility = 'visible'
-      await new Promise((r) => setTimeout(r, 200))
+      el.style.zIndex = '9999'
+      await new Promise((r) => setTimeout(r, 400))
 
       const { default: html2canvas } = await import('html2canvas')
       const canvas = await html2canvas(el, {
-        scale: 2,
+        scale: 3,
         backgroundColor: '#f0ece4',
         useCORS: true,
         logging: false,
       })
 
+      // Restore off-screen
+      el.style.position = 'fixed'
+      el.style.left = '-9999px'
       el.style.visibility = 'hidden'
+      el.style.zIndex = '-1'
 
       const { jsPDF } = await import('jspdf')
       const pdfW = 595

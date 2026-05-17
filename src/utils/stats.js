@@ -52,7 +52,9 @@ export function summaryStats(rows, allRows, filters) {
   )
   const avgShotsPerDay = dayCount > 0 ? (totalScenes / dayCount).toFixed(1) : 0
 
-  return { totalTakes, shootingDays, avgTakesPerDay, avgShotsPerDay }
+  const totalShots = Object.values(scenesPerDay).reduce((sum, s) => sum + s.size, 0)
+
+  return { totalTakes, totalShots, shootingDays, avgTakesPerDay, avgShotsPerDay }
 }
 
 export function lensUsage(rows) {

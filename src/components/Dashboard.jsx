@@ -96,7 +96,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           </button>
           <button
             onClick={() => window.print()}
-            className="hidden sm:flex items-center gap-1.5 px-3 h-7 rounded-full border border-white/20 text-white/60 hover:text-white hover:border-white/40 transition-colors font-['DM_Mono'] text-xs"
+            className="flex items-center gap-1.5 px-3 h-7 rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors font-['DM_Mono'] text-xs"
             aria-label="Export PDF"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -23,7 +23,7 @@ function Toggle({ label, checked, onChange, dark }) {
 }
 
 export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [], dark = false }) {
-  const { cameras, circledOnly, dateRange } = filters
+  const { cameras, dateRange } = filters
 
   const labelClass = `text-xs uppercase tracking-widest font-['DM_Mono'] mb-2 ${dark ? 'text-white' : 'text-[#a09e99]'}`
   const btnBase = `px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors`
@@ -74,17 +74,6 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
           </div>
         </div>
       )}
-
-      {/* Circled Only */}
-      <div>
-        <div className={labelClass}>Circled</div>
-        <Toggle
-          label="Circled takes only"
-          checked={circledOnly}
-          onChange={(v) => onChange({ ...filters, circledOnly: v })}
-          dark={dark}
-        />
-      </div>
 
       {/* Date Range */}
       <div>

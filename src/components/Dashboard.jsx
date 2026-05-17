@@ -22,7 +22,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
 
   const [filters, setFilters] = useState({
     cameras: ['All'],
-    circledOnly: false,
     dateRange: [dateMin, dateMax],
   })
 

@@ -50,10 +50,31 @@ export default function Dashboard({ rows, onReset }) {
     </button>
   )
 
+  const SidebarContents = ({ onNavClick }) => (
+    <>
+      <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] mb-2">
+        Views
+      </div>
+      {VIEWS.map((v) => (
+        <NavButton key={v.id} view={v} onClick={() => onNavClick(v.id)} />
+      ))}
+      <div className="mt-8">
+        <FilterPanel
+          filters={filters}
+          onChange={setFilters}
+          dateMin={dateMin}
+          dateMax={dateMax}
+          availableCameras={availableCameras}
+          dark
+        />
+      </div>
+    </>
+  )
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f0ece4]">
       {/* Top bar */}
-      <header className="bg-[#1a1916] px-8 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
+      <header className="bg-[#1a1916] px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
         <span className="font-['DM_Mono'] text-base font-medium text-white tracking-tight">
           CineLog Wrapped
         </span>
@@ -80,28 +101,9 @@ export default function Dashboard({ rows, onReset }) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — desktop */}
-        <aside className="hidden sm:flex flex-col w-64 bg-[#1a1916] flex-shrink-0 overflow-y-auto">
-          <nav className="px-7 pt-8 pb-8 flex-1">
-            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-1 mb-2">
-              Views
-            </div>
-            {VIEWS.map((v) => (
-              <NavButton key={v.id} view={v} onClick={() => setActiveView(v.id)} />
-            ))}
-
-            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-1 mt-8 mb-2">
-              Filters
-            </div>
-            <div>
-              <FilterPanel
-                filters={filters}
-                onChange={setFilters}
-                dateMin={dateMin}
-                dateMax={dateMax}
-                availableCameras={availableCameras}
-                dark
-              />
-            </div>
+        <aside className="hidden sm:flex flex-col w-72 bg-[#1a1916] flex-shrink-0 overflow-y-auto">
+          <nav className="px-10 pt-8 pb-8 flex-1">
+            <SidebarContents onNavClick={(id) => setActiveView(id)} />
           </nav>
         </aside>
 
@@ -109,29 +111,9 @@ export default function Dashboard({ rows, onReset }) {
         {sidebarOpen && (
           <div className="sm:hidden fixed inset-0 z-40 flex">
             <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-            <div className="relative z-50 w-64 bg-[#1a1916] flex flex-col overflow-y-auto">
-              <div className="p-4 pt-6">
-                <div className="text-[10px] uppercase tracking-widest text-white/25 font-['DM_Mono'] mb-2">
-                  Views
-                </div>
-                {VIEWS.map((v) => (
-                  <NavButton
-                    key={v.id}
-                    view={v}
-                    onClick={() => { setActiveView(v.id); setSidebarOpen(false) }}
-                  />
-                ))}
-                <div className="text-[10px] uppercase tracking-widest text-white/25 font-['DM_Mono'] mt-7 mb-2">
-                  Filters
-                </div>
-                <FilterPanel
-                  filters={filters}
-                  onChange={setFilters}
-                  dateMin={dateMin}
-                  dateMax={dateMax}
-                  availableCameras={availableCameras}
-                  dark
-                />
+            <div className="relative z-50 w-72 bg-[#1a1916] flex flex-col overflow-y-auto">
+              <div className="px-8 pt-8 pb-8">
+                <SidebarContents onNavClick={(id) => { setActiveView(id); setSidebarOpen(false) }} />
               </div>
             </div>
           </div>

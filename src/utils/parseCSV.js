@@ -56,9 +56,8 @@ export function processData(rawRows) {
     _circled: (row['Circled'] || '').toLowerCase() === 'true',
     _camera: (row['Camera'] || '').toUpperCase().trim(),
     _lens: (row['Lens'] || '').trim(),
-    _fps: (row['FPS'] || '').trim(),
-    _iso: (row['ISO'] || '').trim(),
     _scene: (row['Scene'] || '').trim(),
     _support: parseSupportType(row['Notes'] || ''),
+    _filter: (row['Filters'] || '').trim() || null,
   }))
 }

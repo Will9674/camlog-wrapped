@@ -8,8 +8,8 @@ export default function DaysView({ rows, stats }) {
   return (
     <div>
       <SummaryBar stats={stats} />
-      <div className="bg-white border border-[#e2dfd8] rounded-lg p-5">
-        <h2 className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-4">
+      <div className="bg-white border border-[#e8e3da] rounded-xl p-6 shadow-sm">
+        <h2 className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-5">
           Takes per Day
         </h2>
         <VertBarChart data={data} />

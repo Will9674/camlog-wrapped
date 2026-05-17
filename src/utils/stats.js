@@ -39,7 +39,6 @@ export function summaryStats(rows, allRows, filters) {
   const avgTakesPerDay =
     shootingDays > 0 ? (totalTakes / shootingDays).toFixed(1) : 0
 
-  // Avg shots per day = avg unique Scene values per day
   const scenesPerDay = {}
   filtered.forEach((r) => {
     if (!r._date) return
@@ -91,25 +90,14 @@ export function takesPerDay(rows) {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-export function fpsUsage(rows) {
+export function filterUsage(rows) {
   const counts = {}
   rows.forEach((r) => {
-    const fps = r._fps || 'Unknown'
-    counts[fps] = (counts[fps] || 0) + 1
+    const f = r._filter
+    if (!f) return
+    counts[f] = (counts[f] || 0) + 1
   })
-  const total = rows.length
-  return Object.entries(counts)
-    .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
-    .sort((a, b) => b.count - a.count)
-}
-
-export function isoUsage(rows) {
-  const counts = {}
-  rows.forEach((r) => {
-    const iso = r._iso || 'Unknown'
-    counts[iso] = (counts[iso] || 0) + 1
-  })
-  const total = rows.length
+  const total = rows.filter((r) => r._filter).length
   return Object.entries(counts)
     .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
     .sort((a, b) => b.count - a.count)
@@ -118,4 +106,9 @@ export function isoUsage(rows) {
 export function getDateRange(rows) {
   const dates = rows.map((r) => r._date).filter(Boolean).sort()
   return [dates[0] || '', dates[dates.length - 1] || '']
+}
+
+export function getCamerasInData(rows) {
+  const cams = [...new Set(rows.map((r) => r._camera).filter(Boolean))].sort()
+  return cams
 }

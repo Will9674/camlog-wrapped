@@ -3,16 +3,14 @@ import FilterPanel from './FilterPanel'
 import LensView from '../views/LensView'
 import SupportView from '../views/SupportView'
 import DaysView from '../views/DaysView'
-import FPSView from '../views/FPSView'
-import ISOView from '../views/ISOView'
-import { filterRows, summaryStats, getDateRange } from '../utils/stats'
+import FiltersView from '../views/FiltersView'
+import { filterRows, summaryStats, getDateRange, getCamerasInData } from '../utils/stats'
 
 const VIEWS = [
   { id: 'lens', label: 'Lens Usage' },
   { id: 'support', label: 'Camera Support' },
   { id: 'days', label: 'Takes per Day' },
-  { id: 'fps', label: 'Frame Rates' },
-  { id: 'iso', label: 'ISO' },
+  { id: 'filters', label: 'Optical Filters' },
 ]
 
 export default function Dashboard({ rows, onReset }) {
@@ -20,6 +18,7 @@ export default function Dashboard({ rows, onReset }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const [dateMin, dateMax] = useMemo(() => getDateRange(rows), [rows])
+  const availableCameras = useMemo(() => getCamerasInData(rows), [rows])
 
   const [filters, setFilters] = useState({
     cameras: ['All'],
@@ -35,21 +34,33 @@ export default function Dashboard({ rows, onReset }) {
     lens: LensView,
     support: SupportView,
     days: DaysView,
-    fps: FPSView,
-    iso: ISOView,
+    filters: FiltersView,
   }[activeView]
 
+  const NavButton = ({ view, onClick }) => (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-['DM_Sans'] transition-colors ${
+        activeView === view.id
+          ? 'bg-white/15 text-white'
+          : 'text-white/50 hover:text-white/80 hover:bg-white/8'
+      }`}
+    >
+      {view.label}
+    </button>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#f0ece4]">
       {/* Top bar */}
-      <header className="bg-white border-b border-[#e2dfd8] px-4 sm:px-6 h-12 flex items-center justify-between flex-shrink-0">
-        <span className="font-['DM_Mono'] text-sm font-medium text-[#1a1916] tracking-tight">
+      <header className="bg-[#1a1916] px-8 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
+        <span className="font-['DM_Mono'] text-base font-medium text-white tracking-tight">
           CineLog Wrapped
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen((s) => !s)}
-            className="sm:hidden text-[#a09e99] hover:text-[#1a1916] transition-colors"
+            className="sm:hidden text-white/50 hover:text-white transition-colors"
             aria-label="Toggle filters"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -60,7 +71,7 @@ export default function Dashboard({ rows, onReset }) {
           </button>
           <button
             onClick={onReset}
-            className="text-xs text-[#a09e99] hover:text-[#1a1916] font-['DM_Mono'] transition-colors"
+            className="text-xs text-white/60 hover:text-white font-['DM_Mono'] transition-colors"
           >
             New file
           </button>
@@ -69,66 +80,57 @@ export default function Dashboard({ rows, onReset }) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — desktop */}
-        <aside className="hidden sm:flex flex-col w-52 border-r border-[#e2dfd8] bg-white flex-shrink-0 overflow-y-auto">
-          {/* Nav */}
-          <nav className="p-3 border-b border-[#e2dfd8]">
+        <aside className="hidden sm:flex flex-col w-60 bg-[#1a1916] flex-shrink-0 overflow-y-auto">
+          <nav className="p-5 pt-7 flex-1">
+            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-2 mb-2">
+              Views
+            </div>
             {VIEWS.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setActiveView(v.id)}
-                className={`w-full text-left px-3 py-2 rounded text-sm font-['DM_Sans'] transition-colors ${
-                  activeView === v.id
-                    ? 'bg-[#1a1916] text-white'
-                    : 'text-[#1a1916] hover:bg-[#f5f3ee]'
-                }`}
-              >
-                {v.label}
-              </button>
+              <NavButton key={v.id} view={v} onClick={() => setActiveView(v.id)} />
             ))}
+
+            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-2 mt-8 mb-2">
+              Filters
+            </div>
+            <div className="px-1">
+              <FilterPanel
+                filters={filters}
+                onChange={setFilters}
+                dateMin={dateMin}
+                dateMax={dateMax}
+                availableCameras={availableCameras}
+                dark
+              />
+            </div>
           </nav>
-          {/* Filters */}
-          <div className="p-4 flex-1">
-            <FilterPanel
-              filters={filters}
-              onChange={setFilters}
-              dateMin={dateMin}
-              dateMax={dateMax}
-            />
-          </div>
         </aside>
 
         {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div className="sm:hidden fixed inset-0 z-40 flex">
-            <div
-              className="absolute inset-0 bg-black/20"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="relative z-50 w-64 bg-white border-r border-[#e2dfd8] flex flex-col overflow-y-auto">
-              <div className="p-3 border-b border-[#e2dfd8]">
-                <div className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-2">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
+            <div className="relative z-50 w-64 bg-[#1a1916] flex flex-col overflow-y-auto">
+              <div className="p-4 pt-6">
+                <div className="text-[10px] uppercase tracking-widest text-white/25 font-['DM_Mono'] mb-2">
                   Views
                 </div>
                 {VIEWS.map((v) => (
-                  <button
+                  <NavButton
                     key={v.id}
+                    view={v}
                     onClick={() => { setActiveView(v.id); setSidebarOpen(false) }}
-                    className={`w-full text-left px-3 py-2 rounded text-sm font-['DM_Sans'] transition-colors ${
-                      activeView === v.id
-                        ? 'bg-[#1a1916] text-white'
-                        : 'text-[#1a1916] hover:bg-[#f5f3ee]'
-                    }`}
-                  >
-                    {v.label}
-                  </button>
+                  />
                 ))}
-              </div>
-              <div className="p-4 flex-1">
+                <div className="text-[10px] uppercase tracking-widest text-white/25 font-['DM_Mono'] mt-7 mb-2">
+                  Filters
+                </div>
                 <FilterPanel
                   filters={filters}
                   onChange={setFilters}
                   dateMin={dateMin}
                   dateMax={dateMax}
+                  availableCameras={availableCameras}
+                  dark
                 />
               </div>
             </div>
@@ -136,25 +138,27 @@ export default function Dashboard({ rows, onReset }) {
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* Mobile nav tabs */}
-          <div className="sm:hidden flex gap-1 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-            {VIEWS.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setActiveView(v.id)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded text-xs font-['DM_Mono'] transition-colors ${
-                  activeView === v.id
-                    ? 'bg-[#1a1916] text-white'
-                    : 'bg-white text-[#1a1916] border border-[#e2dfd8]'
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-6 sm:px-10 py-8">
+            {/* Mobile nav tabs */}
+            <div className="sm:hidden flex gap-1.5 overflow-x-auto pb-4 mb-2">
+              {VIEWS.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setActiveView(v.id)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-['DM_Mono'] transition-colors ${
+                    activeView === v.id
+                      ? 'bg-[#1a1916] text-white'
+                      : 'bg-white text-[#1a1916] border border-[#e8e3da]'
+                  }`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
 
-          <ViewComponent rows={filteredRows} stats={stats} />
+            <ViewComponent rows={filteredRows} stats={stats} />
+          </div>
         </main>
       </div>
     </div>

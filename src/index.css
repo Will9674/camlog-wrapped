@@ -3,9 +3,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f5f3ee;
+  --color-bg: #f0ece4;
   --color-surface: #ffffff;
-  --color-border: #e2dfd8;
+  --color-border: #e8e3da;
   --color-ink: #1a1916;
   --color-muted: #a09e99;
   --font-sans: 'DM Sans', sans-serif;
@@ -19,7 +19,7 @@
 }
 
 body {
-  background-color: #f5f3ee;
+  background-color: #f0ece4;
   color: #1a1916;
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;

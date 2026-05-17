@@ -75,11 +75,11 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     <div className="min-h-screen flex flex-col bg-[#f0ece4]">
       {/* Top bar */}
       <header className="relative bg-[#1a1916] px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
-        <span className="font-['DM_Mono'] text-base font-medium text-white tracking-tight">
+        <span className="hidden sm:block font-['DM_Mono'] text-base font-medium text-white tracking-tight">
           CineLog Wrapped
         </span>
         {projectTitle && (
-          <span className="absolute left-1/2 -translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-white tracking-tight">
+          <span className="flex-1 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-white tracking-tight">
             {projectTitle}
           </span>
         )}

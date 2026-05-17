@@ -15,7 +15,7 @@ export function filterRows(rows, { cameras, circledOnly, metric, dateRange }) {
     )
   }
 
-  if (metric === 'setups') {
+  if (metric === 'shots') {
     const seen = new Set()
     filtered = filtered.filter((r) => {
       const key = `${r._scene}||${r._date}`
@@ -52,7 +52,7 @@ export function summaryStats(rows, allRows, filters) {
   )
   const avgShotsPerDay = dayCount > 0 ? (totalScenes / dayCount).toFixed(1) : 0
 
-  return { totalTakes, shootingDays, avgTakesPerDay, avgShotsPerDay }
+  return { totalTakes, shootingDays, avgTakesPerDay, avgShotsPerDay, metric: filters.metric }
 }
 
 export function lensUsage(rows) {

@@ -34,7 +34,7 @@ export default function UploadScreen({ onFile, loading }) {
               Your production, wrapped.
             </h1>
             <p className="mt-1.5 text-sm text-[#a09e99] font-['DM_Sans']">
-              Drop a camera log CSV export.
+              Import a camera log CSV export.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function UploadScreen({ onFile, loading }) {
                 </svg>
                 <div>
                   <p className="text-[#1a1916] text-sm font-['DM_Sans'] font-medium">
-                    Drop your CSV here
+                    Attach your CSV here
                   </p>
                   <p className="text-[#a09e99] text-xs font-['DM_Sans'] mt-1">
                     or click to browse

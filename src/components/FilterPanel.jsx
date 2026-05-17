@@ -25,7 +25,7 @@ function Toggle({ label, checked, onChange, dark }) {
 export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [], dark = false }) {
   const { cameras, circledOnly, metric, dateRange } = filters
 
-  const labelClass = `text-[10px] uppercase tracking-widest font-['DM_Mono'] mb-2 ${dark ? 'text-white/30' : 'text-[#a09e99]'}`
+  const labelClass = `text-xs uppercase tracking-widest font-['DM_Mono'] mb-2 ${dark ? 'text-white' : 'text-[#a09e99]'}`
   const btnBase = `px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors`
   const btnActive = dark
     ? 'bg-white/90 text-[#1a1916] border-transparent'
@@ -90,7 +90,7 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
       <div>
         <div className={labelClass}>Metric</div>
         <div className="flex gap-1.5">
-          {['takes', 'setups'].map((m) => (
+          {['shots', 'takes'].map((m) => (
             <button
               key={m}
               onClick={() => onChange({ ...filters, metric: m })}

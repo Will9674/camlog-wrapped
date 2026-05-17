@@ -23,7 +23,7 @@ export default function Dashboard({ rows, onReset }) {
   const [filters, setFilters] = useState({
     cameras: ['All'],
     circledOnly: false,
-    metric: 'takes',
+    metric: 'shots',
     dateRange: [dateMin, dateMax],
   })
 
@@ -52,7 +52,7 @@ export default function Dashboard({ rows, onReset }) {
 
   const SidebarContents = ({ onNavClick }) => (
     <>
-      <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] mb-2">
+      <div className="text-xs uppercase tracking-widest text-white font-['DM_Mono'] mb-2">
         Views
       </div>
       {VIEWS.map((v) => (

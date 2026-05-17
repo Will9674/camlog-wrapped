@@ -13,7 +13,7 @@ const VIEWS = [
   { id: 'filters', label: 'Optical Filters' },
 ]
 
-export default function Dashboard({ rows, onReset }) {
+export default function Dashboard({ rows, projectTitle, onReset }) {
   const [activeView, setActiveView] = useState('lens')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -74,10 +74,15 @@ export default function Dashboard({ rows, onReset }) {
   return (
     <div className="min-h-screen flex flex-col bg-[#f0ece4]">
       {/* Top bar */}
-      <header className="bg-[#1a1916] px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
+      <header className="relative bg-[#1a1916] px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
         <span className="font-['DM_Mono'] text-base font-medium text-white tracking-tight">
           CineLog Wrapped
         </span>
+        {projectTitle && (
+          <span className="absolute left-1/2 -translate-x-1/2 font-['DM_Mono'] text-lg font-medium text-white tracking-tight">
+            {projectTitle}
+          </span>
+        )}
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen((s) => !s)}

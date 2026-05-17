@@ -5,8 +5,16 @@ import { parseCSV, processData } from './utils/parseCSV'
 
 export default function App() {
   const [rows, setRows] = useState(null)
+  const [projectTitle, setProjectTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  function titleFromFilename(name) {
+    return name
+      .replace(/\.csv$/i, '')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  }
 
   async function handleFile(file) {
     setLoading(true)
@@ -15,6 +23,7 @@ export default function App() {
       const raw = await parseCSV(file)
       const processed = processData(raw)
       setRows(processed)
+      setProjectTitle(titleFromFilename(file.name))
     } catch (e) {
       setError('Failed to parse CSV. Please check the file format.')
       console.error(e)
@@ -24,7 +33,7 @@ export default function App() {
   }
 
   if (rows) {
-    return <Dashboard rows={rows} onReset={() => setRows(null)} />
+    return <Dashboard rows={rows} projectTitle={projectTitle} onReset={() => { setRows(null); setProjectTitle('') }} />
   }
 
   return (

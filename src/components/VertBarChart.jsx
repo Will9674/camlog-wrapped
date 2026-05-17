@@ -8,17 +8,17 @@ import {
   Cell,
 } from 'recharts'
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, countLabel }) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-[#e2dfd8] px-3 py-2 text-sm font-['DM_Mono']">
       <div className="text-[#a09e99]">{label}</div>
-      <div className="text-[#1a1916] font-medium">{payload[0].value} takes</div>
+      <div className="text-[#1a1916] font-medium">{payload[0].value} {countLabel}</div>
     </div>
   )
 }
 
-export default function VertBarChart({ data }) {
+export default function VertBarChart({ data, countLabel = 'shots' }) {
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-[#a09e99] font-['DM_Mono'] text-sm">
@@ -57,7 +57,7 @@ export default function VertBarChart({ data }) {
             tickLine={false}
             allowDecimals={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f5f3ee' }} />
+          <Tooltip content={<CustomTooltip countLabel={countLabel} />} cursor={{ fill: '#f5f3ee' }} />
           <Bar dataKey="count" radius={[2, 2, 0, 0]}>
             {data.map((_, i) => (
               <Cell key={i} fill="#1a1916" />

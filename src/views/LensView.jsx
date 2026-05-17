@@ -12,7 +12,7 @@ export default function LensView({ rows, stats }) {
         <h2 className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-5">
           Lens Usage
         </h2>
-        <HorizBarChart data={data} valueKey="pct" showPct />
+        <HorizBarChart data={data} valueKey="pct" showPct countLabel={stats.metric === 'shots' ? 'Shots' : 'Takes'} />
       </div>
     </div>
   )

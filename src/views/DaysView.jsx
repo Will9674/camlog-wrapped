@@ -12,7 +12,7 @@ export default function DaysView({ rows, stats }) {
         <h2 className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-5">
           Takes per Day
         </h2>
-        <VertBarChart data={data} />
+        <VertBarChart data={data} countLabel={stats.metric === 'shots' ? 'Shots' : 'Takes'} />
       </div>
     </div>
   )

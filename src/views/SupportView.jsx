@@ -17,7 +17,7 @@ export default function SupportView({ rows, stats }) {
             No support data found in Notes field
           </div>
         ) : (
-          <HorizBarChart data={data} valueKey="pct" showPct />
+          <HorizBarChart data={data} valueKey="pct" showPct countLabel={stats.metric === 'shots' ? 'Shots' : 'Takes'} />
         )}
       </div>
     </div>

@@ -40,7 +40,7 @@ export default function Dashboard({ rows, onReset }) {
   const NavButton = ({ view, onClick }) => (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-['DM_Sans'] transition-colors ${
+      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-['DM_Sans'] transition-colors ${
         activeView === view.id
           ? 'bg-white/15 text-white'
           : 'text-white/50 hover:text-white/80 hover:bg-white/8'
@@ -80,19 +80,19 @@ export default function Dashboard({ rows, onReset }) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — desktop */}
-        <aside className="hidden sm:flex flex-col w-60 bg-[#1a1916] flex-shrink-0 overflow-y-auto">
-          <nav className="p-5 pt-7 flex-1">
-            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-2 mb-2">
+        <aside className="hidden sm:flex flex-col w-64 bg-[#1a1916] flex-shrink-0 overflow-y-auto">
+          <nav className="px-7 pt-8 pb-8 flex-1">
+            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-1 mb-2">
               Views
             </div>
             {VIEWS.map((v) => (
               <NavButton key={v.id} view={v} onClick={() => setActiveView(v.id)} />
             ))}
 
-            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-2 mt-8 mb-2">
+            <div className="text-[10px] uppercase tracking-widest text-white/30 font-['DM_Mono'] px-1 mt-8 mb-2">
               Filters
             </div>
-            <div className="px-1">
+            <div>
               <FilterPanel
                 filters={filters}
                 onChange={setFilters}

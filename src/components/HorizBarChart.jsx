@@ -35,8 +35,12 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
     label: labelFormatter ? labelFormatter(d.name) : d.name,
   }))
 
-  const barHeight = 32
-  const gap = 8
+  // Size label column to fit the longest label
+  const longestLabel = Math.max(...formatted.map((d) => (d.label || '').length))
+  const yAxisWidth = Math.min(Math.max(80, longestLabel * 7.5), 200)
+
+  const barHeight = 28
+  const gap = 10
   const height = Math.max(120, formatted.length * (barHeight + gap) + 40)
 
   return (
@@ -45,7 +49,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
         <BarChart
           data={formatted}
           layout="vertical"
-          margin={{ top: 4, right: 48, bottom: 4, left: 8 }}
+          margin={{ top: 4, right: 48, bottom: 4, left: 4 }}
           barSize={barHeight}
         >
           <XAxis
@@ -59,7 +63,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
           <YAxis
             type="category"
             dataKey="label"
-            width={110}
+            width={yAxisWidth}
             tick={{ fontFamily: 'DM Mono', fontSize: 12, fill: '#1a1916' }}
             axisLine={false}
             tickLine={false}

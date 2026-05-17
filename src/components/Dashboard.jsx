@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import FilterPanel from './FilterPanel'
 import PrintLayout from './PrintLayout'
 import LensView from '../views/LensView'
@@ -17,6 +17,40 @@ const VIEWS = [
 export default function Dashboard({ rows, projectTitle, onReset }) {
   const [activeView, setActiveView] = useState('lens')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const printRef = useRef(null)
+
+  async function handleExport() {
+    const el = printRef.current
+    if (!el || exporting) return
+    setExporting(true)
+    try {
+      // Move off-screen but keep visible so html2canvas can capture it
+      el.style.left = '-9999px'
+      el.style.top = '0'
+      el.style.visibility = 'visible'
+      await new Promise((r) => setTimeout(r, 200))
+
+      const { default: html2canvas } = await import('html2canvas')
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        backgroundColor: '#f0ece4',
+        useCORS: true,
+        logging: false,
+      })
+
+      el.style.visibility = 'hidden'
+
+      const { jsPDF } = await import('jspdf')
+      const pdfW = 595
+      const pdfH = (canvas.height / canvas.width) * pdfW
+      const pdf = new jsPDF({ unit: 'pt', format: [pdfW, pdfH] })
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH)
+      pdf.save(`${projectTitle || 'CineLog-Wrapped'}.pdf`)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const [dateMin, dateMax] = useMemo(() => getDateRange(rows), [rows])
   const availableCameras = useMemo(() => getCamerasInData(rows), [rows])
@@ -95,16 +129,21 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
             </svg>
           </button>
           <button
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3 h-7 rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors font-['DM_Mono'] text-xs"
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 h-7 rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors font-['DM_Mono'] text-xs disabled:opacity-50"
             aria-label="Export PDF"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Export PDF
+            {exporting ? (
+              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            )}
+            {exporting ? 'Exporting…' : 'Export PDF'}
           </button>
           <button
             onClick={onReset}
@@ -161,6 +200,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
         </main>
       </div>
     </div>
-    <PrintLayout rows={filteredRows} stats={stats} projectTitle={projectTitle} />
+    <PrintLayout ref={printRef} rows={filteredRows} stats={stats} projectTitle={projectTitle} />
   )
 }

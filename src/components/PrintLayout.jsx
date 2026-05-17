@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
 import { lensUsage, supportUsage, filterUsage, takesPerDay, deduplicateShots } from '../utils/stats'
 
@@ -133,7 +133,7 @@ function VertPrintChart({ data }) {
   )
 }
 
-export default function PrintLayout({ rows, stats, projectTitle }) {
+const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle }, ref) {
   const lensData   = useMemo(() => lensUsage(rows), [rows])
   const suppData   = useMemo(() => supportUsage(rows), [rows])
   const filtrData  = useMemo(() => filterUsage(rows), [rows])
@@ -145,6 +145,7 @@ export default function PrintLayout({ rows, stats, projectTitle }) {
 
   return (
     <div
+      ref={ref}
       className="print-layout"
       style={{
         position: 'fixed',
@@ -202,4 +203,6 @@ export default function PrintLayout({ rows, stats, projectTitle }) {
       </SectionCard>
     </div>
   )
-}
+})
+
+export default PrintLayout

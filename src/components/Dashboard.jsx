@@ -9,7 +9,7 @@ import { filterRows, summaryStats, getDateRange, getCamerasInData } from '../uti
 const VIEWS = [
   { id: 'lens', label: 'Lens Usage' },
   { id: 'support', label: 'Camera Support' },
-  { id: 'days', label: 'Takes per Day' },
+  { id: 'days', label: 'Per Day Data' },
   { id: 'filters', label: 'Optical Filters' },
 ]
 
@@ -23,7 +23,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   const [filters, setFilters] = useState({
     cameras: ['All'],
     circledOnly: false,
-    metric: 'shots',
     dateRange: [dateMin, dateMax],
   })
 

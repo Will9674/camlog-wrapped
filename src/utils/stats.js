@@ -15,17 +15,17 @@ export function filterRows(rows, { cameras, circledOnly, metric, dateRange }) {
     )
   }
 
-  if (metric === 'shots') {
-    const seen = new Set()
-    filtered = filtered.filter((r) => {
-      const key = `${r._scene}||${r._date}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-  }
-
   return filtered
+}
+
+export function deduplicateShots(rows) {
+  const seen = new Set()
+  return rows.filter((r) => {
+    const key = `${r._scene}||${r._date}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 export function summaryStats(rows, allRows, filters) {
@@ -52,7 +52,7 @@ export function summaryStats(rows, allRows, filters) {
   )
   const avgShotsPerDay = dayCount > 0 ? (totalScenes / dayCount).toFixed(1) : 0
 
-  return { totalTakes, shootingDays, avgTakesPerDay, avgShotsPerDay, metric: filters.metric }
+  return { totalTakes, shootingDays, avgTakesPerDay, avgShotsPerDay }
 }
 
 export function lensUsage(rows) {

@@ -17,7 +17,7 @@ export default function FiltersView({ rows, stats }) {
             No filter data found in this export
           </div>
         ) : (
-          <HorizBarChart data={data} valueKey="pct" showPct countLabel={stats.metric === 'shots' ? 'Shots' : 'Takes'} />
+          <HorizBarChart data={data} valueKey="pct" showPct countLabel="Shots" />
         )}
       </div>
     </div>

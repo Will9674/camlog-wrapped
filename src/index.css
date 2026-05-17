@@ -12,6 +12,18 @@
   --font-mono: 'DM Mono', monospace;
 }
 
+@media print {
+  .no-print { display: none !important; }
+  .print-layout {
+    position: static !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    visibility: visible !important;
+    z-index: auto !important;
+  }
+}
+
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;

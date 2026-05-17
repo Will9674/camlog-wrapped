@@ -34,7 +34,7 @@ export default function UploadScreen({ onFile, loading }) {
               Your production, wrapped.
             </h1>
             <p className="mt-1.5 text-sm text-[#a09e99] font-['DM_Sans']">
-              Drop a CineLog CSV export to see your shoot in numbers.
+              Drop a camera log CSV export.
             </p>
           </div>
 

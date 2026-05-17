@@ -92,9 +92,10 @@ export default function Dashboard({ rows, onReset }) {
           </button>
           <button
             onClick={onReset}
-            className="text-xs text-white/60 hover:text-white font-['DM_Mono'] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors font-['DM_Mono'] text-xl leading-none"
+            aria-label="New file"
           >
-            New file
+            +
           </button>
         </div>
       </header>
@@ -102,7 +103,7 @@ export default function Dashboard({ rows, onReset }) {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — desktop */}
         <aside className="hidden sm:flex flex-col w-72 bg-[#1a1916] flex-shrink-0 overflow-y-auto">
-          <nav className="px-10 pt-8 pb-8 flex-1">
+          <nav className="px-14 pt-8 pb-8 flex-1">
             <SidebarContents onNavClick={(id) => setActiveView(id)} />
           </nav>
         </aside>

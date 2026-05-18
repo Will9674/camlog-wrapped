@@ -2,7 +2,7 @@ import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
 import { lensUsage, supportUsage, filterUsage, takesPerDay, deduplicateShots } from '../utils/stats'
 
-const CHART_WIDTH = 700
+const CHART_WIDTH = 652
 
 const s = {
   mono: { fontFamily: 'DM Mono, monospace' },
@@ -117,6 +117,7 @@ function VertPrintChart({ data }) {
         textAnchor={data.length > 10 ? 'end' : 'middle'}
       />
       <YAxis
+        width={28}
         tick={{ fontFamily: 'DM Mono', fontSize: 10, fill: '#a09e99' }}
         axisLine={false}
         tickLine={false}

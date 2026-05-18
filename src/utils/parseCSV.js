@@ -19,17 +19,23 @@ const SUPPORT_RULES = [
   { label: 'Mini Libra',   pattern: /\bmini[\s-]?libra\b/i },
   { label: 'Mini Scope',   pattern: /\bmini[\s-]?scope\b/i },
   { label: 'Remote Head',  pattern: /\bremote[\s-]?head\b/i },
-  { label: 'Technocrane',  pattern: /\btechno(crane)?\b/i },
-  { label: 'Steadicam',    pattern: /\bsteadi(cam)?\b/i },
-  { label: 'Handheld',     pattern: /\bhandheld\b/i },
+  // Techno / Techno Crane / Technocrane / Techno-Crane
+  { label: 'Technocrane',  pattern: /\btechno[\s-]?(crane)?\b/i },
+  // Steadicam / Steadi / Stedicam / Stedi / Steadycam / Steady Cam
+  { label: 'Steadicam',    pattern: /\bste[ae]?di(cam)?\b|\bsteady[\s-]?cam\b/i },
+  // Handheld / Hand Held / Hand-Held
+  { label: 'Handheld',     pattern: /\bhand[\s-]?held\b/i },
   { label: 'High Hat',     pattern: /\bhigh[\s-]?hat\b/i },
   { label: 'Low Hat',      pattern: /\blow[\s-]?hat\b/i },
-  { label: 'Sticks',       pattern: /\b(baby\s+sticks?|standard\s+sticks?|sticks?)\b/i },
+  // Sticks / Stick / Baby Sticks / Standard Sticks
+  { label: 'Sticks',       pattern: /\b(baby[\s-]+sticks?|standard[\s-]+sticks?|sticks?)\b/i },
   { label: 'Slider',       pattern: /\bslider\b/i },
   { label: 'Dolly',        pattern: /\bdolly\b/i },
   { label: 'Jib',          pattern: /\bjib\b/i },
+  // Ronin / Ronin-S / Ronin-M etc.
   { label: 'Ronin',        pattern: /\bronin/i },
-  { label: 'Gimbal',       pattern: /\bgimbal\b/i },
+  // Gimbal / Gimble
+  { label: 'Gimbal',       pattern: /\bgimb[ae]l\b/i },
 ]
 
 export function parseSupportType(notes, description = '') {

@@ -5,11 +5,13 @@ import LensView from '../views/LensView'
 import SupportView from '../views/SupportView'
 import DaysView from '../views/DaysView'
 import FiltersView from '../views/FiltersView'
+import CameraView from '../views/CameraView'
 import { filterRows, summaryStats, getDateRange, getCamerasInData } from '../utils/stats'
 
 const VIEWS = [
   { id: 'lens', label: 'Lens Usage' },
   { id: 'support', label: 'Camera Support' },
+  { id: 'camera', label: 'Camera Breakdown' },
   { id: 'days', label: 'Per Day Data' },
   { id: 'filters', label: 'Optical Filters' },
 ]
@@ -73,6 +75,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   const ViewComponent = {
     lens: LensView,
     support: SupportView,
+    camera: CameraView,
     days: DaysView,
     filters: FiltersView,
   }[activeView]

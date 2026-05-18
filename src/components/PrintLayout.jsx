@@ -1,8 +1,31 @@
 import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
-import { lensUsage, supportUsage, filterUsage, takesPerDay, deduplicateShots } from '../utils/stats'
+import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots } from '../utils/stats'
 
 const CHART_WIDTH = 652
+
+const CAMERA_COLORS = ['#1a1916','#7c5c3e','#a08c5e','#4a6741','#3d5c7a','#7a3d4a','#5a4a7a','#6b6560']
+
+function CameraPrintChart({ data }) {
+  if (!data || data.length === 0) return null
+  return (
+    <div>
+      <div style={{ display: 'flex', height: 32, borderRadius: 3, overflow: 'hidden', marginBottom: 16 }}>
+        {data.map((cam, i) => (
+          <div key={cam.name} style={{ width: `${cam.pct}%`, background: CAMERA_COLORS[i % CAMERA_COLORS.length], minWidth: cam.pct > 0 ? 2 : 0 }} />
+        ))}
+      </div>
+      {data.map((cam, i) => (
+        <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: CAMERA_COLORS[i % CAMERA_COLORS.length], flexShrink: 0 }} />
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1a1916', flex: 1 }}>{cam.name}</span>
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6b6762' }}>{cam.pct.toFixed(1)}%</span>
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#a09e99', width: 80, textAlign: 'right' }}>{cam.count} Shots</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const s = {
   mono: { fontFamily: 'DM Mono, monospace' },
@@ -142,6 +165,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
   const lensData   = useMemo(() => lensUsage(shotsRows), [shotsRows])
   const suppData   = useMemo(() => supportUsage(shotsRows), [shotsRows])
   const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
+  const camData    = useMemo(() => cameraUsage(shotsRows), [shotsRows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
 
@@ -189,6 +213,13 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
       {suppData.length > 0 && (
         <SectionCard title="Camera Support">
           <HorizPrintChart data={suppData} />
+        </SectionCard>
+      )}
+
+      {/* Camera Breakdown */}
+      {camData.length > 0 && (
+        <SectionCard title="Camera Breakdown">
+          <CameraPrintChart data={camData} />
         </SectionCard>
       )}
 

@@ -58,6 +58,18 @@ export function summaryStats(rows, allRows, filters) {
   return { totalTakes, totalShots, shootingDays, avgTakesPerDay, avgShotsPerDay }
 }
 
+export function cameraUsage(rows) {
+  const counts = {}
+  rows.forEach((r) => {
+    const cam = r._camera || 'Unknown'
+    counts[cam] = (counts[cam] || 0) + 1
+  })
+  const total = rows.length
+  return Object.entries(counts)
+    .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
+    .sort((a, b) => b.count - a.count)
+}
+
 export function lensUsage(rows) {
   const counts = {}
   rows.forEach((r) => {

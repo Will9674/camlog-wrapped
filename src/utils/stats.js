@@ -21,6 +21,7 @@ export function filterRows(rows, { cameras, circledOnly, metric, dateRange }) {
 export function deduplicateShots(rows) {
   const seen = new Set()
   return rows.filter((r) => {
+    if (!r._scene) return false
     const key = `${r._scene}||${r._date}`
     if (seen.has(key)) return false
     seen.add(key)
@@ -41,7 +42,7 @@ export function summaryStats(rows, allRows, filters) {
 
   const scenesPerDay = {}
   filtered.forEach((r) => {
-    if (!r._date) return
+    if (!r._date || !r._scene) return
     if (!scenesPerDay[r._date]) scenesPerDay[r._date] = new Set()
     scenesPerDay[r._date].add(r._scene)
   })

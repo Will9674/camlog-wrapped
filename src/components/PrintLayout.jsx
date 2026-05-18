@@ -93,15 +93,14 @@ function VertPrintChart({ data }) {
     return `${parseInt(m)}/${parseInt(day)}`
   }
 
-  const MIN_BAR_SLOT = 14
-  const chartWidth = Math.max(CHART_WIDTH, data.length * MIN_BAR_SLOT + 48)
-  const barSize = Math.min(18, Math.floor((chartWidth - 48) / data.length) - 4)
-  const showLabels = barSize >= 12
-  const tickInterval = barSize < 8 ? Math.ceil(data.length / 10) - 1 : 0
+  // Fixed width — jsPDF scales the whole layout to 595pt regardless
+  const barSize = Math.min(40, Math.max(4, Math.floor(652 / data.length) - 2))
+  const showLabels = barSize >= 20
+  const tickInterval = data.length > 20 ? Math.ceil(data.length / 8) - 1 : 0
 
   return (
     <BarChart
-      width={chartWidth}
+      width={CHART_WIDTH}
       height={220}
       data={data}
       margin={{ top: showLabels ? 18 : 8, right: 16, bottom: 24, left: 0 }}
@@ -144,7 +143,6 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
   const shotsRows  = useMemo(() => deduplicateShots(rows), [rows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
-  const printWidth = Math.max(780, (perDayData.length * 14 + 48) + 80)
 
   const shotsDays = new Set(shotsRows.map((r) => r._date).filter(Boolean)).size
   const shotsAvg  = shotsDays > 0 ? (shotsRows.length / shotsDays).toFixed(1) : 0
@@ -157,7 +155,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
         position: 'fixed',
         left: -9999,
         top: 0,
-        width: printWidth,
+        width: 780,
         background: '#f0ece4',
         padding: '40px 40px 60px',
         visibility: 'hidden',

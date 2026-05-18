@@ -23,8 +23,8 @@ const SUPPORT_RULES = [
   { label: 'Technocrane',  pattern: /\btechno[\s-]?(crane)?\b/i },
   // Steadicam / Steadi / Stedicam / Stedi / Steadycam / Steady Cam
   { label: 'Steadicam',    pattern: /\bste[ae]?di(cam)?\b|\bsteady[\s-]?cam\b/i },
-  // Handheld / Hand Held / Hand-Held
-  { label: 'Handheld',     pattern: /\bhand[\s-]?held\b/i },
+  // Handheld / Hand Held / Hand-Held / HH
+  { label: 'Handheld',     pattern: /\bhand[\s-]?held\b|\bHH\b/i },
   { label: 'High Hat',     pattern: /\bhigh[\s-]?hat\b/i },
   { label: 'Low Hat',      pattern: /\blow[\s-]?hat\b/i },
   // Sticks / Stick / Baby Sticks / Standard Sticks

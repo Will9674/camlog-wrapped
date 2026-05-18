@@ -1,9 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="42" fill="#1a1916"/>
+  <rect width="192" height="192" rx="42" fill="#111111"/>
 
-  <!-- Bold red C arc, opening to the right (~280°) -->
-  <!-- Circle center: (96,96), radius: 62 -->
-  <!-- Arc from upper-right to lower-right, going the long way around (counterclockwise) -->
+  <!-- Bold red C arc, opening to the right — circle center (96,96), radius 62 -->
   <path
     d="M 142 57 A 62 62 0 1 0 142 135"
     fill="none"
@@ -12,14 +10,14 @@
     stroke-linecap="round"
   />
 
-  <!-- W in the gap — centered in the opening -->
+  <!-- W centered in the C, matching where LOG sits in CineLog -->
   <text
-    x="157"
-    y="99"
+    x="96"
+    y="96"
     font-family="'DM Mono', 'Courier New', monospace"
     font-weight="700"
-    font-size="44"
-    fill="#f0ece4"
+    font-size="62"
+    fill="#ffffff"
     text-anchor="middle"
     dominant-baseline="middle"
   >W</text>

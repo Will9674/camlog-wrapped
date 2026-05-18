@@ -48,15 +48,18 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
     return `${parseInt(m)}/${parseInt(day)}`
   }
 
-  // Left margin accounts for Y-axis (~32px). Each bar slot includes gap.
-  const usableWidth = Math.max(containerWidth - 48, 100)
-  const barSize = Math.min(40, Math.max(6, Math.floor(usableWidth / data.length) - 4))
+  const MIN_BAR_SLOT = 18
+  const idealWidth = data.length * MIN_BAR_SLOT + 48
+  const chartWidth = Math.max(containerWidth, idealWidth)
+  const barSize = Math.min(40, Math.floor((chartWidth - 48) / data.length) - 4)
   const showLabels = barSize >= 14
   const angleLabels = data.length > 10
   const tickInterval = barSize < 10 ? Math.ceil(data.length / 8) - 1 : 0
+  const scrollable = idealWidth > containerWidth
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: 320 }}>
+    <div ref={containerRef} style={{ width: '100%', overflowX: scrollable ? 'auto' : 'visible' }}>
+      <div style={{ width: chartWidth, height: 320 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -94,6 +97,7 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </div>
   )
 }

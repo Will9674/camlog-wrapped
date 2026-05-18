@@ -93,15 +93,19 @@ function VertPrintChart({ data }) {
     return `${parseInt(m)}/${parseInt(day)}`
   }
 
-  const showLabels = data.length <= 30
+  const MIN_BAR_SLOT = 14
+  const chartWidth = Math.max(CHART_WIDTH, data.length * MIN_BAR_SLOT + 48)
+  const barSize = Math.min(18, Math.floor((chartWidth - 48) / data.length) - 4)
+  const showLabels = barSize >= 12
+  const tickInterval = barSize < 8 ? Math.ceil(data.length / 10) - 1 : 0
 
   return (
     <BarChart
-      width={CHART_WIDTH}
+      width={chartWidth}
       height={220}
       data={data}
       margin={{ top: showLabels ? 18 : 8, right: 16, bottom: 24, left: 0 }}
-      barSize={data.length > 20 ? 8 : 18}
+      barSize={barSize}
     >
       <XAxis
         dataKey="name"
@@ -109,7 +113,7 @@ function VertPrintChart({ data }) {
         tick={{ fontFamily: 'DM Mono', fontSize: 10, fill: '#a09e99' }}
         axisLine={false}
         tickLine={false}
-        interval={data.length > 15 ? Math.floor(data.length / 10) : 0}
+        interval={tickInterval}
         angle={data.length > 10 ? -45 : 0}
         textAnchor={data.length > 10 ? 'end' : 'middle'}
       />
@@ -140,6 +144,8 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
   const shotsRows  = useMemo(() => deduplicateShots(rows), [rows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
+  const printWidth = Math.max(780, (perDayData.length * 14 + 48) + 80)
+
   const shotsDays = new Set(shotsRows.map((r) => r._date).filter(Boolean)).size
   const shotsAvg  = shotsDays > 0 ? (shotsRows.length / shotsDays).toFixed(1) : 0
 
@@ -151,7 +157,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
         position: 'fixed',
         left: -9999,
         top: 0,
-        width: 780,
+        width: printWidth,
         background: '#f0ece4',
         padding: '40px 40px 60px',
         visibility: 'hidden',

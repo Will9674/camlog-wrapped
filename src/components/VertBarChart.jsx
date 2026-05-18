@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react'
 import {
   BarChart,
   Bar,
@@ -20,6 +21,19 @@ const CustomTooltip = ({ active, payload, label, countLabel }) => {
 }
 
 export default function VertBarChart({ data, countLabel = 'Shots' }) {
+  const containerRef = useRef(null)
+  const [containerWidth, setContainerWidth] = useState(600)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const observer = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width)
+    })
+    observer.observe(containerRef.current)
+    setContainerWidth(containerRef.current.offsetWidth)
+    return () => observer.disconnect()
+  }, [])
+
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-[#a09e99] font-['DM_Mono'] text-sm">
@@ -30,17 +44,24 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
 
   const formatDate = (d) => {
     if (!d) return ''
-    const [y, m, day] = d.split('-')
+    const [, m, day] = d.split('-')
     return `${parseInt(m)}/${parseInt(day)}`
   }
 
+  // Left margin accounts for Y-axis (~32px). Each bar slot includes gap.
+  const usableWidth = Math.max(containerWidth - 48, 100)
+  const barSize = Math.min(40, Math.max(6, Math.floor(usableWidth / data.length) - 4))
+  const showLabels = barSize >= 14
+  const angleLabels = data.length > 10
+  const tickInterval = barSize < 10 ? Math.ceil(data.length / 8) - 1 : 0
+
   return (
-    <div style={{ width: '100%', height: 320 }}>
+    <div ref={containerRef} style={{ width: '100%', height: 320 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ top: data.length <= 25 ? 20 : 4, right: 16, bottom: data.length > 10 ? 32 : 16, left: 0 }}
-          barSize={data.length > 20 ? 8 : 20}
+          margin={{ top: showLabels ? 20 : 8, right: 16, bottom: angleLabels ? 32 : 16, left: 0 }}
+          barSize={barSize}
         >
           <XAxis
             dataKey="name"
@@ -48,9 +69,9 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
             tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#a09e99' }}
             axisLine={false}
             tickLine={false}
-            interval={data.length > 15 ? Math.floor(data.length / 10) : 0}
-            angle={data.length > 10 ? -45 : 0}
-            textAnchor={data.length > 10 ? 'end' : 'middle'}
+            interval={tickInterval}
+            angle={angleLabels ? -45 : 0}
+            textAnchor={angleLabels ? 'end' : 'middle'}
           />
           <YAxis
             tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#a09e99' }}
@@ -63,7 +84,7 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
             {data.map((_, i) => (
               <Cell key={i} fill="#1a1916" />
             ))}
-            {data.length <= 25 && (
+            {showLabels && (
               <LabelList
                 dataKey="count"
                 position="top"

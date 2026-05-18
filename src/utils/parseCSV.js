@@ -14,26 +14,29 @@ export function parseCSV(file) {
 }
 
 const SUPPORT_RULES = [
-  {
-    label: 'Handheld',
-    match: (note) => /^handheld/i.test(note),
-  },
-  {
-    label: 'Sticks / High Hat',
-    match: (note) =>
-      /^(sticks|high\s*hat|cine\s*saddle|egyptian\s*pancake\s*roller|on\s*ground\s*with\s*wedges)/i.test(note),
-  },
-  {
-    label: 'Slider / Dana Dolly',
-    match: (note) => /^(slider|dana\s*dolly)/i.test(note),
-  },
+  // Most specific first to avoid being shadowed by shorter terms
+  { label: 'Dana Dolly',   pattern: /\bdana[\s-]?dolly\b/i },
+  { label: 'Mini Libra',   pattern: /\bmini[\s-]?libra\b/i },
+  { label: 'Mini Scope',   pattern: /\bmini[\s-]?scope\b/i },
+  { label: 'Remote Head',  pattern: /\bremote[\s-]?head\b/i },
+  { label: 'Technocrane',  pattern: /\btechno(crane)?\b/i },
+  { label: 'Steadicam',    pattern: /\bsteadi(cam)?\b/i },
+  { label: 'Handheld',     pattern: /\bhandheld\b/i },
+  { label: 'High Hat',     pattern: /\bhigh[\s-]?hat\b/i },
+  { label: 'Low Hat',      pattern: /\blow[\s-]?hat\b/i },
+  { label: 'Sticks',       pattern: /\b(baby\s+sticks?|standard\s+sticks?|sticks?)\b/i },
+  { label: 'Slider',       pattern: /\bslider\b/i },
+  { label: 'Dolly',        pattern: /\bdolly\b/i },
+  { label: 'Jib',          pattern: /\bjib\b/i },
+  { label: 'Ronin',        pattern: /\bronin/i },
+  { label: 'Gimbal',       pattern: /\bgimbal\b/i },
 ]
 
-export function parseSupportType(notes) {
-  if (!notes) return null
-  const trimmed = notes.trim()
+export function parseSupportType(notes, description = '') {
+  const text = [notes, description].filter(Boolean).join(' ').trim()
+  if (!text) return null
   for (const rule of SUPPORT_RULES) {
-    if (rule.match(trimmed)) return rule.label
+    if (rule.pattern.test(text)) return rule.label
   }
   return null
 }
@@ -57,7 +60,7 @@ export function processData(rawRows) {
     _camera: (row['Camera'] || '').toUpperCase().trim(),
     _lens: (row['Lens'] || '').trim(),
     _scene: (row['Scene'] || '').trim(),
-    _support: parseSupportType(row['Notes'] || ''),
+    _support: parseSupportType(row['Notes'] || '', row['Description'] || ''),
     _filter: (row['Filters'] || '').trim() || null,
   }))
 }

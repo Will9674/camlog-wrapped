@@ -6,6 +6,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  LabelList,
 } from 'recharts'
 
 const CustomTooltip = ({ active, payload, label, countLabel }) => {
@@ -18,7 +19,7 @@ const CustomTooltip = ({ active, payload, label, countLabel }) => {
   )
 }
 
-export default function VertBarChart({ data, countLabel = 'shots' }) {
+export default function VertBarChart({ data, countLabel = 'Shots' }) {
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-[#a09e99] font-['DM_Mono'] text-sm">
@@ -38,7 +39,7 @@ export default function VertBarChart({ data, countLabel = 'shots' }) {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ top: 4, right: 16, bottom: 16, left: 0 }}
+          margin={{ top: data.length <= 25 ? 20 : 4, right: 16, bottom: 16, left: 0 }}
           barSize={data.length > 20 ? 8 : 20}
         >
           <XAxis
@@ -62,6 +63,13 @@ export default function VertBarChart({ data, countLabel = 'shots' }) {
             {data.map((_, i) => (
               <Cell key={i} fill="#1a1916" />
             ))}
+            {data.length <= 25 && (
+              <LabelList
+                dataKey="count"
+                position="top"
+                style={{ fontFamily: 'DM Mono', fontSize: 10, fill: '#6b6762' }}
+              />
+            )}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

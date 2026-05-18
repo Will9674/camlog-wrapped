@@ -6,24 +6,19 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  LabelList,
 } from 'recharts'
 
-const CustomTooltip = ({ active, payload, label, showPct, countLabel }) => {
+const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
-  const count = payload[0].payload?.count
   return (
     <div className="bg-white border border-[#e2dfd8] px-3 py-2 text-sm font-['DM_Mono']">
       <div className="text-[#1a1916] font-medium">{label}</div>
-      <div className="text-[#a09e99]">
-        {showPct
-          ? `${payload[0].value}%${count != null ? `, ${count} ${countLabel}` : ''}`
-          : `${payload[0].value} ${countLabel}`}
-      </div>
     </div>
   )
 }
 
-export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, labelFormatter, countLabel = 'shots' }) {
+export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, labelFormatter, countLabel = 'Shots' }) {
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-[#a09e99] font-['DM_Mono'] text-sm">
@@ -36,9 +31,11 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
     ...d,
     displayValue: showPct ? parseFloat(d[valueKey].toFixed(1)) : d[valueKey],
     label: labelFormatter ? labelFormatter(d.name) : d.name,
+    barLabel: showPct
+      ? `${parseFloat(d[valueKey].toFixed(1))}%  ·  ${d.count} ${countLabel}`
+      : `${d[valueKey]} ${countLabel}`,
   }))
 
-  // Size label column to fit the longest label
   const longestLabel = Math.max(...formatted.map((d) => (d.label || '').length))
   const yAxisWidth = Math.min(Math.max(80, longestLabel * 7.5), 200)
 
@@ -52,7 +49,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
         <BarChart
           data={formatted}
           layout="vertical"
-          margin={{ top: 4, right: 48, bottom: 4, left: 4 }}
+          margin={{ top: 4, right: 180, bottom: 4, left: 4 }}
           barSize={barHeight}
         >
           <XAxis
@@ -71,14 +68,16 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
             axisLine={false}
             tickLine={false}
           />
-          <Tooltip
-            content={<CustomTooltip showPct={showPct} countLabel={countLabel} />}
-            cursor={{ fill: '#f5f3ee' }}
-          />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f5f3ee' }} />
           <Bar dataKey="displayValue" radius={[0, 2, 2, 0]}>
             {formatted.map((_, i) => (
               <Cell key={i} fill="#1a1916" />
             ))}
+            <LabelList
+              dataKey="barLabel"
+              position="right"
+              style={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#6b6762' }}
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

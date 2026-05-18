@@ -49,7 +49,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
     displayValue: showPct ? parseFloat(d[valueKey].toFixed(1)) : d[valueKey],
     label: labelFormatter ? labelFormatter(d.name) : d.name,
     barLabel: showPct
-      ? `${parseFloat(d[valueKey].toFixed(1))}%`
+      ? `${parseFloat(d[valueKey].toFixed(1))}% · ${d.count}`
       : `${d[valueKey]}`,
     barLabelFull: showPct
       ? `${parseFloat(d[valueKey].toFixed(1))}%  ·  ${d.count} ${countLabel}`
@@ -61,7 +61,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
     ? Math.min(Math.max(60, longestLabel * 6), 120)
     : Math.min(Math.max(80, longestLabel * 7.5), 200)
 
-  const rightMargin = isNarrow ? 48 : 180
+  const rightMargin = isNarrow ? 72 : 180
 
   const barHeight = 28
   const gap = 10

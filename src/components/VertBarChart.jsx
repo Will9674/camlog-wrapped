@@ -35,11 +35,11 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
   }
 
   return (
-    <div style={{ width: '100%', height: 260 }}>
+    <div style={{ width: '100%', height: 320 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ top: data.length <= 25 ? 20 : 4, right: 16, bottom: 16, left: 0 }}
+          margin={{ top: data.length <= 25 ? 20 : 4, right: 16, bottom: data.length > 10 ? 32 : 16, left: 0 }}
           barSize={data.length > 20 ? 8 : 20}
         >
           <XAxis

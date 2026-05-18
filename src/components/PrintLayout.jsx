@@ -138,10 +138,10 @@ function VertPrintChart({ data }) {
 }
 
 const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle }, ref) {
-  const lensData   = useMemo(() => lensUsage(rows), [rows])
-  const suppData   = useMemo(() => supportUsage(rows), [rows])
-  const filtrData  = useMemo(() => filterUsage(rows), [rows])
   const shotsRows  = useMemo(() => deduplicateShots(rows), [rows])
+  const lensData   = useMemo(() => lensUsage(shotsRows), [shotsRows])
+  const suppData   = useMemo(() => supportUsage(shotsRows), [shotsRows])
+  const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
 

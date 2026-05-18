@@ -1,9 +1,9 @@
 import SummaryBar from '../components/SummaryBar'
 import HorizBarChart from '../components/HorizBarChart'
-import { fpsUsage } from '../utils/stats'
+import { fpsUsage, deduplicateShots } from '../utils/stats'
 
 export default function FPSView({ rows, stats }) {
-  const data = fpsUsage(rows)
+  const data = fpsUsage(deduplicateShots(rows))
 
   return (
     <div>

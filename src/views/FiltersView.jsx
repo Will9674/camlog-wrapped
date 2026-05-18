@@ -1,9 +1,9 @@
 import SummaryBar from '../components/SummaryBar'
 import HorizBarChart from '../components/HorizBarChart'
-import { filterUsage } from '../utils/stats'
+import { filterUsage, deduplicateShots } from '../utils/stats'
 
 export default function FiltersView({ rows, stats }) {
-  const data = filterUsage(rows)
+  const data = filterUsage(deduplicateShots(rows))
 
   return (
     <div>

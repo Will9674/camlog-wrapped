@@ -1,9 +1,9 @@
 import SummaryBar from '../components/SummaryBar'
 import HorizBarChart from '../components/HorizBarChart'
-import { isoUsage } from '../utils/stats'
+import { isoUsage, deduplicateShots } from '../utils/stats'
 
 export default function ISOView({ rows, stats }) {
-  const data = isoUsage(rows)
+  const data = isoUsage(deduplicateShots(rows))
 
   return (
     <div>

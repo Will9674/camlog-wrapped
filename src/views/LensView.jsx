@@ -1,9 +1,9 @@
 import SummaryBar from '../components/SummaryBar'
 import HorizBarChart from '../components/HorizBarChart'
-import { lensUsage } from '../utils/stats'
+import { lensUsage, deduplicateShots } from '../utils/stats'
 
 export default function LensView({ rows, stats }) {
-  const data = lensUsage(rows)
+  const data = lensUsage(deduplicateShots(rows))
 
   return (
     <div>

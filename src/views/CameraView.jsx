@@ -1,17 +1,6 @@
 import { useMemo } from 'react'
 import SummaryBar from '../components/SummaryBar'
-import { cameraUsage, deduplicateShots } from '../utils/stats'
-
-const COLORS = [
-  '#1a1916',
-  '#7c5c3e',
-  '#a08c5e',
-  '#4a6741',
-  '#3d5c7a',
-  '#7a3d4a',
-  '#5a4a7a',
-  '#6b6560',
-]
+import { cameraUsage, deduplicateShots, getCameraColorByIndex } from '../utils/stats'
 
 export default function CameraView({ rows, stats }) {
   const data = useMemo(() => cameraUsage(deduplicateShots(rows)), [rows])
@@ -44,7 +33,7 @@ export default function CameraView({ rows, stats }) {
               key={cam.name}
               style={{
                 width: `${cam.pct}%`,
-                background: COLORS[i % COLORS.length],
+                background: getCameraColorByIndex(cam.name, i),
                 minWidth: cam.pct > 0 ? 2 : 0,
               }}
               title={`${cam.name}: ${cam.pct.toFixed(1)}%`}
@@ -58,7 +47,7 @@ export default function CameraView({ rows, stats }) {
             <div key={cam.name} className="flex items-center gap-3">
               <div
                 className="flex-shrink-0 rounded-sm"
-                style={{ width: 14, height: 14, background: COLORS[i % COLORS.length] }}
+                style={{ width: 14, height: 14, background: getCameraColorByIndex(cam.name, i) }}
               />
               <span className="font-['DM_Mono'] text-sm text-[#1a1916] flex-1">{cam.name}</span>
               <span className="font-['DM_Mono'] text-sm text-[#6b6762]">

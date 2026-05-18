@@ -58,6 +58,34 @@ export function summaryStats(rows, allRows, filters) {
   return { totalTakes, totalShots, shootingDays, avgTakesPerDay, avgShotsPerDay }
 }
 
+const CAMERA_COLOR_MAP = {
+  A: '#e53935',
+  B: '#1e88e5',
+  C: '#f9c00e',
+  D: '#43a047',
+  E: '#fb8c00',
+  F: '#8e24aa',
+  G: '#e91e8c',
+  H: '#d4ff00',
+  J: '#39ff14',
+  K: '#ff6b00',
+  L: '#ff10f0',
+  X: '#78909c',
+}
+
+const CAMERA_FALLBACK_COLORS = [
+  '#00bcd4', '#ff1744', '#00e5ff', '#76ff03', '#ff9100', '#d500f9', '#00e676', '#40c4ff',
+]
+
+export function getCameraColor(cameraName) {
+  const letter = (cameraName || '').charAt(0).toUpperCase()
+  return CAMERA_COLOR_MAP[letter] || null
+}
+
+export function getCameraColorByIndex(cameraName, index) {
+  return getCameraColor(cameraName) || CAMERA_FALLBACK_COLORS[index % CAMERA_FALLBACK_COLORS.length]
+}
+
 export function cameraUsage(rows) {
   const counts = {}
   rows.forEach((r) => {

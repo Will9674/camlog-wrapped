@@ -25,7 +25,8 @@ export default function DaysView({ rows }) {
   const isShots = metric === 'shots'
 
   const localRows = useMemo(() => {
-    let r = circledOnly ? rows.filter((row) => row._circled) : rows
+    let r = rows.filter((row) => row._scene)
+    if (circledOnly) r = r.filter((row) => row._circled)
     return isShots ? deduplicateShots(r) : r
   }, [rows, isShots, circledOnly])
 

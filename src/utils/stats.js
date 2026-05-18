@@ -34,7 +34,7 @@ export function summaryStats(rows, allRows, filters) {
 
   const totalTakes = filtered.length
 
-  const daySet = new Set(filtered.map((r) => r._date).filter(Boolean))
+  const daySet = new Set(filtered.filter((r) => r._scene).map((r) => r._date).filter(Boolean))
   const shootingDays = daySet.size
 
   const avgTakesPerDay =

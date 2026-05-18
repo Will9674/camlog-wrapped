@@ -1,3 +1,19 @@
+function roundTo100(items) {
+  const floored = items.map(item => ({
+    ...item,
+    pct: Math.floor(item.pct * 10) / 10,
+  }))
+  let remainder = Math.round((100 - floored.reduce((s, i) => s + i.pct, 0)) * 10)
+  floored
+    .map((item, idx) => ({ idx, frac: (items[idx].pct * 10) % 1 }))
+    .sort((a, b) => b.frac - a.frac)
+    .slice(0, remainder)
+    .forEach(({ idx }) => {
+      floored[idx].pct = Math.round((floored[idx].pct + 0.1) * 10) / 10
+    })
+  return floored
+}
+
 export function filterRows(rows, { cameras, circledOnly, metric, dateRange }) {
   let filtered = rows
 
@@ -99,9 +115,11 @@ export function cameraUsage(rows) {
     counts[cam] = (counts[cam] || 0) + 1
   })
   const total = Object.values(counts).reduce((s, c) => s + c, 0)
-  return Object.entries(counts)
-    .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
-    .sort((a, b) => b.count - a.count)
+  return roundTo100(
+    Object.entries(counts)
+      .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
+      .sort((a, b) => b.count - a.count)
+  )
 }
 
 export function lensUsage(rows) {
@@ -111,9 +129,11 @@ export function lensUsage(rows) {
     counts[lens] = (counts[lens] || 0) + 1
   })
   const total = rows.length
-  return Object.entries(counts)
-    .map(([lens, count]) => ({ name: lens, count, pct: total ? (count / total) * 100 : 0 }))
-    .sort((a, b) => b.count - a.count)
+  return roundTo100(
+    Object.entries(counts)
+      .map(([lens, count]) => ({ name: lens, count, pct: total ? (count / total) * 100 : 0 }))
+      .sort((a, b) => b.count - a.count)
+  )
 }
 
 export function supportUsage(rows) {
@@ -123,9 +143,11 @@ export function supportUsage(rows) {
     counts[r._support] = (counts[r._support] || 0) + 1
   })
   const total = rows.filter((r) => r._support).length
-  return Object.entries(counts)
-    .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
-    .sort((a, b) => b.count - a.count)
+  return roundTo100(
+    Object.entries(counts)
+      .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
+      .sort((a, b) => b.count - a.count)
+  )
 }
 
 export function takesPerDay(rows) {
@@ -147,9 +169,11 @@ export function filterUsage(rows) {
     counts[f] = (counts[f] || 0) + 1
   })
   const total = rows.filter((r) => r._filter).length
-  return Object.entries(counts)
-    .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
-    .sort((a, b) => b.count - a.count)
+  return roundTo100(
+    Object.entries(counts)
+      .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
+      .sort((a, b) => b.count - a.count)
+  )
 }
 
 export function getDateRange(rows) {

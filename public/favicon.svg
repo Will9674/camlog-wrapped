@@ -1,26 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Dark rounded background -->
-  <rect width="32" height="32" rx="7" fill="#1a1916"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="42" fill="#1a1916"/>
 
-  <!-- Clapperboard body -->
-  <rect x="6" y="16" width="20" height="11" rx="1.5" fill="#f0ece4"/>
-  <!-- Horizontal lines on body -->
-  <line x1="6" y1="19.5" x2="26" y2="19.5" stroke="#1a1916" stroke-width="0.8" opacity="0.25"/>
-  <line x1="6" y1="23" x2="26" y2="23" stroke="#1a1916" stroke-width="0.8" opacity="0.25"/>
+  <!-- Bold red C arc, opening to the right (~280°) -->
+  <!-- Circle center: (96,96), radius: 62 -->
+  <!-- Arc from upper-right to lower-right, going the long way around (counterclockwise) -->
+  <path
+    d="M 142 57 A 62 62 0 1 0 142 135"
+    fill="none"
+    stroke="#E8302C"
+    stroke-width="36"
+    stroke-linecap="round"
+  />
 
-  <!-- Clapper strip with diagonal stripes -->
-  <clipPath id="cl">
-    <rect x="6" y="8" width="20" height="8" rx="1.5"/>
-  </clipPath>
-  <g clip-path="url(#cl)">
-    <rect x="6" y="8" width="20" height="8" fill="#f0ece4"/>
-    <polygon points="6,8 12,8 6,16" fill="#1a1916"/>
-    <polygon points="12,8 18,8 12,16 6,16" fill="#f0ece4"/>
-    <polygon points="18,8 24,8 18,16 12,16" fill="#1a1916"/>
-    <polygon points="24,8 26,8 26,16 18,16" fill="#f0ece4"/>
-    <polygon points="26,8 26,10" fill="#1a1916"/>
-  </g>
-
-  <!-- Hinge line between clapper and body -->
-  <rect x="6" y="15.5" width="20" height="1" fill="#1a1916" opacity="0.4"/>
+  <!-- W in the gap — centered in the opening -->
+  <text
+    x="157"
+    y="99"
+    font-family="'DM Mono', 'Courier New', monospace"
+    font-weight="700"
+    font-size="44"
+    fill="#f0ece4"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >W</text>
 </svg>

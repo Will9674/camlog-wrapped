@@ -163,6 +163,8 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
         zIndex: -1,
       }}
     >
+      {/* Force recharts SVG to not clip label text outside plot area */}
+      <style>{`.print-layout svg { overflow: visible !important; }`}</style>
       {/* Header */}
       <div style={{ marginBottom: 28, paddingBottom: 16, borderBottom: '1px solid #d8d2c8' }}>
         <div style={{ fontSize: 11, color: '#a09e99', ...s.mono, marginBottom: 4 }}>CineLog Wrapped</div>

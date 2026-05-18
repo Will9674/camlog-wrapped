@@ -33,12 +33,10 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       el.style.zIndex = '9999'
       await new Promise((r) => setTimeout(r, 400))
 
-      const { default: html2canvas } = await import('html2canvas')
-      const canvas = await html2canvas(el, {
-        scale: 3,
+      const { toPng } = await import('html-to-image')
+      const dataUrl = await toPng(el, {
+        pixelRatio: 4,
         backgroundColor: '#f0ece4',
-        useCORS: true,
-        logging: false,
       })
 
       // Restore off-screen
@@ -47,11 +45,14 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       el.style.visibility = 'hidden'
       el.style.zIndex = '-1'
 
+      const img = new Image()
+      await new Promise((res) => { img.onload = res; img.src = dataUrl })
+
       const { jsPDF } = await import('jspdf')
       const pdfW = 595
-      const pdfH = (canvas.height / canvas.width) * pdfW
+      const pdfH = (img.naturalHeight / img.naturalWidth) * pdfW
       const pdf = new jsPDF({ unit: 'pt', format: [pdfW, pdfH] })
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH)
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH)
       pdf.save(`${projectTitle || 'CineLog-Wrapped'}.pdf`)
     } finally {
       setExporting(false)

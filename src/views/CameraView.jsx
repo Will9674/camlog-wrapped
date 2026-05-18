@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import SummaryBar from '../components/SummaryBar'
-import { cameraUsage, deduplicateShots, getCameraColorByIndex } from '../utils/stats'
+import { cameraUsage, getCameraColorByIndex } from '../utils/stats'
 
 export default function CameraView({ rows, stats }) {
-  const data = useMemo(() => cameraUsage(deduplicateShots(rows)), [rows])
+  const data = useMemo(() => cameraUsage(rows), [rows])
 
   if (data.length === 0) {
     return (

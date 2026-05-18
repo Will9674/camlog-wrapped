@@ -163,7 +163,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
   const lensData   = useMemo(() => lensUsage(shotsRows), [shotsRows])
   const suppData   = useMemo(() => supportUsage(shotsRows), [shotsRows])
   const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
-  const camData    = useMemo(() => cameraUsage(shotsRows), [shotsRows])
+  const camData    = useMemo(() => cameraUsage(rows), [rows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
 

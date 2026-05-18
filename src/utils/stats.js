@@ -87,12 +87,18 @@ export function getCameraColorByIndex(cameraName, index) {
 }
 
 export function cameraUsage(rows) {
+  // Deduplicate by scene+date+camera so multi-camera shots count once per camera
+  const seen = new Set()
   const counts = {}
   rows.forEach((r) => {
+    if (!r._scene) return
+    const key = `${r._camera}||${r._scene}||${r._date}`
+    if (seen.has(key)) return
+    seen.add(key)
     const cam = r._camera || 'Unknown'
     counts[cam] = (counts[cam] || 0) + 1
   })
-  const total = rows.length
+  const total = Object.values(counts).reduce((s, c) => s + c, 0)
   return Object.entries(counts)
     .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
     .sort((a, b) => b.count - a.count)

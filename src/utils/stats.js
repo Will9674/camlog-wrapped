@@ -1,3 +1,6 @@
+// Largest-remainder rounding: floors all percentages to 1dp, then distributes
+// remaining 0.1 increments to the items with the largest fractional remainders,
+// guaranteeing the displayed values always sum to exactly 100.0%.
 function roundTo100(items) {
   const floored = items.map(item => ({
     ...item,
@@ -14,7 +17,7 @@ function roundTo100(items) {
   return floored
 }
 
-export function filterRows(rows, { cameras, circledOnly, metric, dateRange }) {
+export function filterRows(rows, { cameras, circledOnly, dateRange }) {
   let filtered = rows
 
   if (cameras && cameras.length > 0 && !cameras.includes('All')) {
@@ -45,31 +48,26 @@ export function deduplicateShots(rows) {
   })
 }
 
-export function summaryStats(rows, allRows, filters) {
-  const filtered = filterRows(allRows, filters)
+// Computes summary stats for the current filter state.
+// Returns: { totalTakes, totalShots, shootingDays, avgTakesPerDay, avgShotsPerDay,
+//            dateFirst, dateLast, busiestDay }
+export function summaryStats(rows, filters) {
+  const filtered = filterRows(rows, filters)
 
   const totalTakes = filtered.length
 
-  const daySet = new Set(filtered.filter((r) => r._scene).map((r) => r._date).filter(Boolean))
-  const shootingDays = daySet.size
-
-  const avgTakesPerDay =
-    shootingDays > 0 ? (totalTakes / shootingDays).toFixed(1) : 0
-
+  // Build a map of date → unique scenes to derive shot/day counts
   const scenesPerDay = {}
   filtered.forEach((r) => {
     if (!r._date || !r._scene) return
     if (!scenesPerDay[r._date]) scenesPerDay[r._date] = new Set()
     scenesPerDay[r._date].add(r._scene)
   })
-  const dayCount = Object.keys(scenesPerDay).length
-  const totalScenes = Object.values(scenesPerDay).reduce(
-    (sum, s) => sum + s.size,
-    0
-  )
-  const avgShotsPerDay = dayCount > 0 ? (totalScenes / dayCount).toFixed(1) : 0
 
+  const shootingDays = Object.keys(scenesPerDay).length
   const totalShots = Object.values(scenesPerDay).reduce((sum, s) => sum + s.size, 0)
+  const avgTakesPerDay = shootingDays > 0 ? (totalTakes / shootingDays).toFixed(1) : 0
+  const avgShotsPerDay = shootingDays > 0 ? (totalShots / shootingDays).toFixed(1) : 0
 
   const sortedDates = Object.keys(scenesPerDay).sort()
   const dateFirst = sortedDates[0] || null
@@ -110,7 +108,6 @@ export function getCameraColorByIndex(cameraName, index) {
 }
 
 export function cameraUsage(rows) {
-  // Deduplicate by scene+date+camera so multi-camera shots count once per camera
   const seen = new Set()
   const counts = {}
   rows.forEach((r) => {
@@ -133,8 +130,7 @@ function normalizeLens(raw) {
   let s = raw.trim()
   if (!s) return null
   if (/^zooms?$/i.test(s)) return null
-  // Strip redundant ".mm" or extra "mm" appended after a valid focal length
-  // "35mm .mm" → "35mm"
+  // Strip redundant ".mm" or extra "mm" appended after a valid focal length: "35mm .mm" → "35mm"
   s = s.replace(/(\d+mm)\s*[.,]?\s*mm\b/gi, '$1').trim()
   return s || null
 }
@@ -163,7 +159,7 @@ export function supportUsage(rows) {
     if (!r._support) return
     counts[r._support] = (counts[r._support] || 0) + 1
   })
-  const total = rows.filter((r) => r._support).length
+  const total = Object.values(counts).reduce((s, c) => s + c, 0)
   return roundTo100(
     Object.entries(counts)
       .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
@@ -182,65 +178,64 @@ export function takesPerDay(rows) {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
+// Converts fraction notation with any separator to slash: "1-4" → "1/4".
+// Period is excluded from the separator class to protect ND decimal values like "ND 1.4".
+function normalizeFractions(s) {
+  return s.replace(/\b1\s*[^\d\w\s.]\s*(2|4|8|16)\b/g, '1/$1')
+}
+
 function normalizeFilter(raw) {
   let s = raw.trim().replace(/\s+/g, ' ')
   if (!s) return null
 
-  s = s
-    .replace(/([a-z])[.,](\d)/gi, '$1 $2')                    // strip stray dot/comma: ND.3 → ND 3
-    .replace(/([a-z])(\d)/gi, '$1 $2')                         // space between abbrev and number: BDFX2 → BDFX 2
-    .replace(/\b1\s*[^\d\w\s.]\s*(2|4|8|16)\b/g, '1/$1')     // any separator → slash: 1-4 → 1/4 (period excluded to protect ND decimals)
-    .replace(/\s+/g, ' ')
-    .trim()
+  s = normalizeFractions(
+    s
+      .replace(/([a-z])[.,](\d)/gi, '$1 $2')  // strip stray dot/comma: ND.3 → ND 3
+      .replace(/([a-z])(\d)/gi, '$1 $2')       // space between abbrev and number: BDFX2 → BDFX 2
+  ).replace(/\s+/g, ' ').trim()
   if (!s) return null
 
-  // ND filters: ND3, ND 3, ND0.3, ND 0.3, ND6 SE, ND12 HE, ND3SE → "ND 0.3", "ND 0.6 SE", "ND 1.2 HE"
-  // Integers are shorthand for tenths: 3 → 0.3, 6 → 0.6, 12 → 1.2
-  // Letter suffixes (SE, HE, INT, EXT, etc.) are preserved — they identify distinct filter products
+  // ND filters — integers are shorthand for tenths: ND3 → ND 0.3, ND12 → ND 1.2
+  // Letter suffixes are preserved (SE, HE identify distinct products)
+  // INT/EXT are form-factor variants only — stripped, same optical density
   const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*([a-z]+(?:\/[a-z]+)?)?$/i)
   if (ndMatch) {
     const numStr = ndMatch[1]
     const rawSuffix = ndMatch[2] || ''
-    // INT/EXT are form-factor variants (built-in vs mattebox) — strip them, same filter density
-    // All other suffixes (SE, HE, etc.) identify distinct products — preserve them
     const suffix = /^(?:int(?:\/ext)?|ext(?:\/int)?)$/i.test(rawSuffix) ? '' : rawSuffix.toUpperCase()
     let val = parseFloat(numStr)
     if (!numStr.includes('.')) val = val / 10
     return suffix ? `ND ${val.toFixed(1)} ${suffix}` : `ND ${val.toFixed(1)}`
   }
-  // Bare "ND" with no strength → skip
   if (/^nd$/i.test(s)) return null
 
-  // Split Diopter: supports integer and fraction strengths
-  // "Split DIO 2", "Split Diopter 1/2" → "Split Diopter +2", "Split Diopter +1/2"
+  // Split Diopter: "Split DIO 2", "Split Diopter 1/2" → "Split Diopter +2", "Split Diopter +1/2"
   const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
   if (splitDioMatch) return `Split Diopter +${splitDioMatch[1]}`
 
-  // Diopter with slash fraction (after pre-processing converts any dash → slash)
+  // Diopter: "DIO1", "DIO +1", "Diopter 1/2", "DIO 1-2" → "Diopter +1", "Diopter +1/2"
   const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
   if (dioMatch) return `Diopter +${dioMatch[1]}`
-  // Diopter with any other separator still remaining (belt-and-suspenders fallback)
+  // Fallback for any separator that survived pre-processing (e.g. unusual dash variants)
   const dioSepMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)\s*[^\d\w\s.]\s*(\d+)$/i)
   if (dioSepMatch) return `Diopter +${dioSepMatch[1]}/${dioSepMatch[2]}`
-  // Bare "DIO"/"Diopter" with no strength → skip
   if (/^(?:dio(?:pter)?)$/i.test(s)) return null
 
-  // Polarizer: Pola, POLA, Polarizer, Polariser → "Pola"
+  // Polarizer
   if (/^pola(?:ri[sz]er)?$/i.test(s)) return 'Pola'
 
   // Clear (exact) → "Clear"; variants like "Clear (Nose Grease)" fall through to default
   if (/^clear$/i.test(s)) return 'Clear'
 
-  // Bare fraction with no filter name, any separator → skip
+  // Bare fraction with no filter name → skip
   if (/^\d+[^\d\w\s.]\d+$/.test(s)) return null
 
   // Bare filter name with no number → skip
-  // Exception: entries containing "clear" (e.g., "Clear (Nose Grease)") are valid without a number
+  // Exception: "clear" variants (e.g. "Clear (Nose Grease)") are valid without a number
   if (!/\d/.test(s) && !/\bclear\b/i.test(s)) return null
 
-  // Default: uppercase — filter names are abbreviations (BDFX, BPM, HBM, etc.)
-  // Also normalize any remaining fraction separators (e.g. BDFX 1-4 → BDFX 1/4)
-  return s.replace(/\b1\s*[^\d\w\s.]\s*(2|4|8|16)\b/g, '1/$1').toUpperCase()
+  // Default: uppercase abbreviation, with any remaining fractions normalized
+  return normalizeFractions(s).toUpperCase()
 }
 
 export function filterUsage(rows) {

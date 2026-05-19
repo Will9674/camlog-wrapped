@@ -70,7 +70,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   })
 
   const filteredRows = useMemo(() => filterRows(rows, filters), [rows, filters])
-  const stats = useMemo(() => summaryStats(rows, rows, filters), [rows, filters])
+  const stats = useMemo(() => summaryStats(rows, filters), [rows, filters])
 
   const ViewComponent = {
     lens: LensView,

@@ -159,9 +159,10 @@ function VertPrintChart({ data }) {
 }
 
 const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle }, ref) {
-  const shotsRows  = useMemo(() => deduplicateShots(rows), [rows])
-  const lensData   = useMemo(() => lensUsage(shotsRows), [shotsRows])
-  const suppData   = useMemo(() => supportUsage(shotsRows), [shotsRows])
+  const shotsRows      = useMemo(() => deduplicateShots(rows), [rows])
+  const lensData       = useMemo(() => lensUsage(shotsRows), [shotsRows])
+  const suppData       = useMemo(() => supportUsage(shotsRows), [shotsRows])
+  const suppExcluded   = useMemo(() => shotsRows.length - suppData.reduce((s, d) => s + d.count, 0), [shotsRows, suppData])
   const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
   const camData    = useMemo(() => cameraUsage(rows), [rows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
@@ -211,6 +212,11 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
       {suppData.length > 0 && (
         <SectionCard title="Camera Support">
           <HorizPrintChart data={suppData} />
+          {suppExcluded > 0 && (
+            <div style={{ marginTop: 12, fontSize: 9, fontFamily: 'DM Mono, monospace', color: '#a09e99' }}>
+              {suppExcluded} of {shotsRows.length} shots ({Math.round((suppExcluded / shotsRows.length) * 100)}%) had no recognized camera support data and are not shown.
+            </div>
+          )}
         </SectionCard>
       )}
 

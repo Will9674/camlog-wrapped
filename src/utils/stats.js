@@ -184,6 +184,16 @@ function normalizeFractions(s) {
   return s.replace(/\b1\s*[^\d\w\s.]\s*(2|4|8|16)\b/g, '1/$1')
 }
 
+// Formats a parsed ND filter into a canonical label.
+// INT/EXT suffixes are stripped (form-factor variants, same density).
+// All other suffixes (SE, HE, etc.) are joined directly to ND: "NDSE 0.6".
+function formatND(numStr, rawSuffix) {
+  let val = parseFloat(numStr)
+  if (!numStr.includes('.')) val = val / 10
+  const suffix = /^(?:int(?:\/ext)?|ext(?:\/int)?)$/i.test(rawSuffix) ? '' : rawSuffix.toUpperCase()
+  return suffix ? `ND${suffix} ${val.toFixed(1)}` : `ND ${val.toFixed(1)}`
+}
+
 function normalizeFilter(raw) {
   let s = raw.trim().replace(/\s+/g, ' ')
   if (!s) return null
@@ -196,17 +206,17 @@ function normalizeFilter(raw) {
   if (!s) return null
 
   // ND filters — integers are shorthand for tenths: ND3 → ND 0.3, ND12 → ND 1.2
-  // Letter suffixes are preserved (SE, HE identify distinct products)
+  // Suffixes SE/HE etc. identify distinct filter products and are joined to ND: "NDSE 0.6"
   // INT/EXT are form-factor variants only — stripped, same optical density
+  // Handles two input orderings:
+  //   suffix before number: "NDSE 3", "NDSE3"  → "NDSE 0.3"
+  //   suffix after number:  "ND 6 SE", "ND3SE" → "NDSE 0.6"
+  const ndFusedMatch = s.match(/^nd([a-z]{2,})\s*(\d*\.?\d+)$/i)
+  if (ndFusedMatch) return formatND(ndFusedMatch[2], ndFusedMatch[1])
+
   const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*([a-z]+(?:\/[a-z]+)?)?$/i)
-  if (ndMatch) {
-    const numStr = ndMatch[1]
-    const rawSuffix = ndMatch[2] || ''
-    const suffix = /^(?:int(?:\/ext)?|ext(?:\/int)?)$/i.test(rawSuffix) ? '' : rawSuffix.toUpperCase()
-    let val = parseFloat(numStr)
-    if (!numStr.includes('.')) val = val / 10
-    return suffix ? `ND ${val.toFixed(1)} ${suffix}` : `ND ${val.toFixed(1)}`
-  }
+  if (ndMatch) return formatND(ndMatch[1], ndMatch[2] || '')
+
   if (/^nd$/i.test(s)) return null
 
   // Split Diopter: "Split DIO 2", "Split Diopter 1/2" → "Split Diopter +2", "Split Diopter +1/2"

@@ -18,7 +18,7 @@ function CameraPrintChart({ data }) {
           <div style={{ width: 10, height: 10, borderRadius: 2, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
           <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1a1916', flex: 1 }}>{cam.name}</span>
           <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6b6762' }}>{cam.pct.toFixed(1)}%</span>
-          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#a09e99', width: 80, textAlign: 'right' }}>{cam.count} Shots</span>
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#a09e99', width: 80, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
         </div>
       ))}
     </div>
@@ -31,11 +31,11 @@ const s = {
   sectionHeading: { fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#a09e99', marginBottom: 14, fontFamily: 'DM Mono, monospace' },
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, small = false }) {
   return (
     <div style={{ flex: 1, background: 'white', border: '1px solid #e8e3da', borderRadius: 10, padding: '12px 16px' }}>
       <div style={s.label}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 600, color: '#1a1916', ...s.mono }}>{value}</div>
+      <div style={{ fontSize: small ? 14 : 22, fontWeight: 600, color: '#1a1916', lineHeight: 1.3, ...s.mono }}>{value}</div>
     </div>
   )
 }
@@ -59,7 +59,7 @@ function HorizPrintChart({ data }) {
   const formatted = data.map((d) => ({
     ...d,
     displayValue: parseFloat(d.pct.toFixed(1)),
-    barLabel: `${d.pct.toFixed(1)}%  ·  ${d.count} Shots`,
+    barLabel: `${d.pct.toFixed(1)}%  ·  ${d.count} ${d.count === 1 ? 'Shot' : 'Shots'}`,
   }))
 
   const longestLabel = Math.max(...formatted.map((d) => (d.name || '').length))
@@ -202,6 +202,19 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
         <StatCard label="Shooting Days" value={stats.shootingDays} />
         <StatCard label="Avg Shots / Day" value={stats.avgShotsPerDay} />
       </StatRow>
+      {(stats.dateFirst || stats.busiestDay) && (() => {
+        const fmtD = (d) => { if (!d) return ''; const [y,m,day] = d.split('-'); const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return { label: `${mo[parseInt(m)-1]} ${parseInt(day)}`, year: y } }
+        const a = fmtD(stats.dateFirst), b = fmtD(stats.dateLast)
+        const dateRange = (a && b) ? (a.year === b.year ? `${a.label} – ${b.label}, ${a.year}` : `${a.label}, ${a.year} – ${b.label}, ${b.year}`) : null
+        const bd = stats.busiestDay
+        const busiestStr = bd ? `${fmtD(bd.date).label} · ${bd.count} ${bd.count === 1 ? 'Shot' : 'Shots'}` : null
+        return (
+          <StatRow>
+            {dateRange && <StatCard label="Date Range" value={dateRange} small />}
+            {busiestStr && <StatCard label="Busiest Day" value={busiestStr} small />}
+          </StatRow>
+        )
+      })()}
 
       {/* Lens Usage */}
       <SectionCard title="Lens Usage">

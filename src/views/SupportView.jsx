@@ -25,7 +25,7 @@ export default function SupportView({ rows, stats }) {
             <HorizBarChart data={data} valueKey="pct" showPct countLabel="Shots" />
             {excludedShots > 0 && (
               <p className="mt-4 text-xs font-['DM_Mono'] text-[#a09e99]">
-                {excludedShots} of {totalShots} shots ({Math.round((excludedShots / totalShots) * 100)}%) had no recognized camera support data and are not shown.
+                {excludedShots} of {totalShots} {totalShots === 1 ? 'shot' : 'shots'} ({Math.round((excludedShots / totalShots) * 100)}%) had no recognized camera support data and are not shown.
               </p>
             )}
           </>

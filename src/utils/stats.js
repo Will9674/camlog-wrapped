@@ -71,7 +71,14 @@ export function summaryStats(rows, allRows, filters) {
 
   const totalShots = Object.values(scenesPerDay).reduce((sum, s) => sum + s.size, 0)
 
-  return { totalTakes, totalShots, shootingDays, avgTakesPerDay, avgShotsPerDay }
+  const sortedDates = Object.keys(scenesPerDay).sort()
+  const dateFirst = sortedDates[0] || null
+  const dateLast = sortedDates[sortedDates.length - 1] || null
+
+  const busiestEntry = Object.entries(scenesPerDay).sort((a, b) => b[1].size - a[1].size)[0]
+  const busiestDay = busiestEntry ? { date: busiestEntry[0], count: busiestEntry[1].size } : null
+
+  return { totalTakes, totalShots, shootingDays, avgTakesPerDay, avgShotsPerDay, dateFirst, dateLast, busiestDay }
 }
 
 const CAMERA_COLOR_MAP = {

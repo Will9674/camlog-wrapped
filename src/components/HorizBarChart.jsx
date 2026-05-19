@@ -10,12 +10,14 @@ import {
   LabelList,
 } from 'recharts'
 
+const pl = (n, plural) => `${n} ${n === 1 ? plural.replace(/s$/, '') : plural}`
+
 const CustomTooltip = ({ active, payload, label, countLabel }) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-[#e2dfd8] px-3 py-2 text-sm font-['DM_Mono']">
       <div className="text-[#1a1916] font-medium">{label}</div>
-      <div className="text-[#a09e99]">{payload[0].value}{payload[0].unit} · {payload[0].payload.count} {countLabel}</div>
+      <div className="text-[#a09e99]">{payload[0].value}{payload[0].unit} · {pl(payload[0].payload.count, countLabel)}</div>
     </div>
   )
 }
@@ -52,8 +54,8 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
       ? `${parseFloat(d[valueKey].toFixed(1))}% · ${d.count}`
       : `${d[valueKey]}`,
     barLabelFull: showPct
-      ? `${parseFloat(d[valueKey].toFixed(1))}%  ·  ${d.count} ${countLabel}`
-      : `${d[valueKey]} ${countLabel}`,
+      ? `${parseFloat(d[valueKey].toFixed(1))}%  ·  ${pl(d.count, countLabel)}`
+      : pl(d.count, countLabel),
   }))
 
   // Mobile: full-width CSS bars so every bar uses the entire card width

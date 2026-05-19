@@ -54,7 +54,7 @@ export default function CameraView({ rows, stats }) {
                 {cam.pct.toFixed(1)}%
               </span>
               <span className="font-['DM_Mono'] text-sm text-[#a09e99] w-24 text-right">
-                {cam.count} Shots
+                {cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}
               </span>
             </div>
           ))}

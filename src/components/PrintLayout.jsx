@@ -63,7 +63,7 @@ function HorizPrintChart({ data }) {
   }))
 
   const longestLabel = Math.max(...formatted.map((d) => (d.name || '').length))
-  const yAxisWidth = Math.min(Math.max(80, longestLabel * 7), 180)
+  const yAxisWidth = Math.min(Math.max(80, longestLabel * 9), 260)
   const barHeight = 24
   const gap = 8
   const height = Math.max(80, formatted.length * (barHeight + gap) + 40)

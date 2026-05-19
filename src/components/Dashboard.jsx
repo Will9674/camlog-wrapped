@@ -26,13 +26,13 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     const el = printRef.current
     if (!el || exporting) return
     setExporting(true)
+    // Bring on-screen so Recharts SVGs render fully before capture
+    el.style.position = 'fixed'
+    el.style.left = '0'
+    el.style.top = '0'
+    el.style.visibility = 'visible'
+    el.style.zIndex = '9999'
     try {
-      // Bring on-screen so Recharts SVGs render fully before capture
-      el.style.position = 'fixed'
-      el.style.left = '0'
-      el.style.top = '0'
-      el.style.visibility = 'visible'
-      el.style.zIndex = '9999'
       await new Promise((r) => setTimeout(r, 400))
 
       const { toPng } = await import('html-to-image')
@@ -40,12 +40,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
         pixelRatio: 4,
         backgroundColor: '#f0ece4',
       })
-
-      // Restore off-screen
-      el.style.position = 'fixed'
-      el.style.left = '-9999px'
-      el.style.visibility = 'hidden'
-      el.style.zIndex = '-1'
 
       const img = new Image()
       await new Promise((res) => { img.onload = res; img.src = dataUrl })
@@ -57,6 +51,11 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH)
       pdf.save(`${projectTitle || 'CineLog-Wrapped'}.pdf`)
     } finally {
+      // Always restore off-screen whether export succeeded or failed
+      el.style.position = 'fixed'
+      el.style.left = '-9999px'
+      el.style.visibility = 'hidden'
+      el.style.zIndex = '-1'
       setExporting(false)
     }
   }

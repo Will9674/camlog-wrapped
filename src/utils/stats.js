@@ -136,7 +136,7 @@ export function lensUsage(rows) {
     if (tokens.length === 0) {
       counts['Unknown'] = (counts['Unknown'] || 0) + 1
     } else {
-      tokens.forEach(l => { counts[l] = (counts[l] || 0) + 1 })
+      tokens.filter(l => !/^zooms?$/i.test(l)).forEach(l => { counts[l] = (counts[l] || 0) + 1 })
     }
   })
   const total = Object.values(counts).reduce((s, c) => s + c, 0)

@@ -168,11 +168,44 @@ export function takesPerDay(rows) {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
+function normalizeFilter(raw) {
+  const s = raw.trim().replace(/\s+/g, ' ')
+  if (!s) return null
+
+  // ND filters: ND3, ND 3, ND0.3, ND 0.3, ND.3, ND3 INT, ND6 EXT → "ND 0.3" etc.
+  // Integers are shorthand for tenths: 3 → 0.3, 6 → 0.6, 12 → 1.2
+  // INT/EXT suffix (built-in vs mattebox) is ignored — same filter density either way
+  const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*(?:int|ext)?$/i)
+  if (ndMatch) {
+    const numStr = ndMatch[1]
+    let val = parseFloat(numStr)
+    if (!numStr.includes('.')) val = val / 10
+    return `ND ${val.toFixed(1)}`
+  }
+
+  // Split Diopter: Split DIO 2, Split Diopter 1 → "Split Diopter +1" (distinct from regular)
+  const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+)$/i)
+  if (splitDioMatch) return `Split Diopter +${splitDioMatch[1]}`
+
+  // Diopter: DIO1, DIO +1, Diopter1, Diopter +1, Diopter 1 → "Diopter +1"
+  const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)$/i)
+  if (dioMatch) return `Diopter +${dioMatch[1]}`
+
+  // Polarizer: Pola, POLA, Polarizer, Polariser → "Pola"
+  if (/^pola(?:ri[sz]er)?$/i.test(s)) return 'Pola'
+
+  // Clear
+  if (/^clear$/i.test(s)) return 'Clear'
+
+  // Default: title-case for consistent case normalization across spelling variations
+  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+}
+
 export function filterUsage(rows) {
   const counts = {}
   rows.forEach((r) => {
     if (!r._filter) return
-    r._filter.split(',').map(f => f.trim()).filter(Boolean).forEach(f => {
+    r._filter.split(',').map(f => normalizeFilter(f)).filter(Boolean).forEach(f => {
       counts[f] = (counts[f] || 0) + 1
     })
   })

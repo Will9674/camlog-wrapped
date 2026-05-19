@@ -177,9 +177,9 @@ function normalizeFilter(raw) {
   if (!s) return null
 
   s = s
-    .replace(/([a-z])[.,](\d)/gi, '$1 $2')           // strip stray dot/comma: ND.3 → ND 3
-    .replace(/([a-z])(\d)/gi, '$1 $2')                // space between abbrev and number: BDFX2 → BDFX 2
-    .replace(/\b1\s*[-–—−]\s*(2|4|8|16)\b/g, '1/$1')  // dash fraction → slash: 1-4 → 1/4
+    .replace(/([a-z])[.,](\d)/gi, '$1 $2')                    // strip stray dot/comma: ND.3 → ND 3
+    .replace(/([a-z])(\d)/gi, '$1 $2')                         // space between abbrev and number: BDFX2 → BDFX 2
+    .replace(/\b1\s*[^\d\w\s.]\s*(2|4|8|16)\b/g, '1/$1')     // any separator → slash: 1-4 → 1/4 (period excluded to protect ND decimals)
     .replace(/\s+/g, ' ')
     .trim()
   if (!s) return null
@@ -206,13 +206,12 @@ function normalizeFilter(raw) {
   const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
   if (splitDioMatch) return `Split Diopter +${splitDioMatch[1]}`
 
-  // Diopter: integer, slash-fraction, or dash-fraction strengths
-  // "DIO1", "DIO +1", "Diopter 1/2", "DIO 1-2" → "Diopter +1", "Diopter +1/2"
-  const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+(?:[\/\-–—−]\d+)?)$/i)
-  if (dioMatch) {
-    const strength = dioMatch[1].replace(/[-–—−]/, '/')
-    return `Diopter +${strength}`
-  }
+  // Diopter with slash fraction (after pre-processing converts any dash → slash)
+  const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
+  if (dioMatch) return `Diopter +${dioMatch[1]}`
+  // Diopter with any other separator still remaining (belt-and-suspenders fallback)
+  const dioSepMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)\s*[^\d\w\s.]\s*(\d+)$/i)
+  if (dioSepMatch) return `Diopter +${dioSepMatch[1]}/${dioSepMatch[2]}`
   // Bare "DIO"/"Diopter" with no strength → skip
   if (/^(?:dio(?:pter)?)$/i.test(s)) return null
 
@@ -222,15 +221,16 @@ function normalizeFilter(raw) {
   // Clear (exact) → "Clear"; variants like "Clear (Nose Grease)" fall through to default
   if (/^clear$/i.test(s)) return 'Clear'
 
-  // Bare fraction with no filter name (e.g., "1/2", "1/4", "1-2", "1-4") → skip
-  if (/^\d+[\/\-–—−]\d+$/.test(s)) return null
+  // Bare fraction with no filter name, any separator → skip
+  if (/^\d+[^\d\w\s.]\d+$/.test(s)) return null
 
   // Bare filter name with no number → skip
   // Exception: entries containing "clear" (e.g., "Clear (Nose Grease)") are valid without a number
   if (!/\d/.test(s) && !/\bclear\b/i.test(s)) return null
 
   // Default: uppercase — filter names are abbreviations (BDFX, BPM, HBM, etc.)
-  return s.toUpperCase()
+  // Also normalize any remaining fraction separators (e.g. BDFX 1-4 → BDFX 1/4)
+  return s.replace(/\b1\s*[^\d\w\s.]\s*(2|4|8|16)\b/g, '1/$1').toUpperCase()
 }
 
 export function filterUsage(rows) {

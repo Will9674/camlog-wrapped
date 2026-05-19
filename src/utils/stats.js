@@ -129,14 +129,24 @@ export function cameraUsage(rows) {
   )
 }
 
+function normalizeLens(raw) {
+  let s = raw.trim()
+  if (!s) return null
+  if (/^zooms?$/i.test(s)) return null
+  // Strip redundant ".mm" or extra "mm" appended after a valid focal length
+  // "35mm .mm" → "35mm"
+  s = s.replace(/(\d+mm)\s*[.,]?\s*mm\b/gi, '$1').trim()
+  return s || null
+}
+
 export function lensUsage(rows) {
   const counts = {}
   rows.forEach((r) => {
-    const tokens = (r._lens || '').split(',').map(l => l.trim()).filter(Boolean)
+    const tokens = (r._lens || '').split(',').map(l => normalizeLens(l)).filter(Boolean)
     if (tokens.length === 0) {
       counts['Unknown'] = (counts['Unknown'] || 0) + 1
     } else {
-      tokens.filter(l => !/^zooms?$/i.test(l)).forEach(l => { counts[l] = (counts[l] || 0) + 1 })
+      tokens.forEach(l => { counts[l] = (counts[l] || 0) + 1 })
     }
   })
   const total = Object.values(counts).reduce((s, c) => s + c, 0)

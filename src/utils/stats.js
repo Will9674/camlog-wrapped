@@ -173,9 +173,9 @@ function normalizeFilter(raw) {
   if (!s) return null
 
   s = s
-    .replace(/([a-z])[.,](\d)/gi, '$1 $2')        // strip stray dot/comma: ND.3 → ND 3
-    .replace(/([a-z])(\d)/gi, '$1 $2')             // space between abbrev and number: BDFX2 → BDFX 2
-    .replace(/\b1\s*[-–]\s*(2|4|8|16)\b/g, '1/$1') // dash/en-dash fraction → slash: 1-4 → 1/4
+    .replace(/([a-z])[.,](\d)/gi, '$1 $2')                    // strip stray dot/comma: ND.3 → ND 3
+    .replace(/([a-z])(\d)/gi, '$1 $2')                         // space between abbrev and number: BDFX2 → BDFX 2
+    .replace(/\b1\s*[\p{Dash}]\s*(2|4|8|16)\b/gu, '1/$1')    // any Unicode dash fraction → slash: 1-4 → 1/4
     .replace(/\s+/g, ' ')
     .trim()
   if (!s) return null
@@ -202,10 +202,14 @@ function normalizeFilter(raw) {
   const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
   if (splitDioMatch) return `Split Diopter +${splitDioMatch[1]}`
 
-  // Diopter: integer and fraction strengths
+  // Diopter: integer and slash-fraction strengths
   // "DIO1", "DIO +1", "Diopter 1/2" → "Diopter +1", "Diopter +1/2"
   const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
   if (dioMatch) return `Diopter +${dioMatch[1]}`
+  // Diopter with dash-fraction fallback (in case dash→slash conversion didn't fire)
+  // "DIO 1-2", "DIO 1–2" → "Diopter +1/2"
+  const dioDashMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)\s*[\p{Dash}]\s*(\d+)$/iu)
+  if (dioDashMatch) return `Diopter +${dioDashMatch[1]}/${dioDashMatch[2]}`
   // Bare "DIO"/"Diopter" with no strength → skip
   if (/^(?:dio(?:pter)?)$/i.test(s)) return null
 
@@ -215,8 +219,8 @@ function normalizeFilter(raw) {
   // Clear (exact) → "Clear"; variants like "Clear (Nose Grease)" fall through to default
   if (/^clear$/i.test(s)) return 'Clear'
 
-  // Bare fraction with no filter name (e.g., "1/2", "1/4") → skip
-  if (/^\d+\/\d+$/.test(s)) return null
+  // Bare fraction with no filter name (e.g., "1/2", "1/4", "1-2", "1-4") → skip
+  if (/^\d+[\/\p{Dash}]\d+$/u.test(s)) return null
 
   // Bare filter name with no number → skip
   // Exception: entries containing "clear" (e.g., "Clear (Nose Grease)") are valid without a number

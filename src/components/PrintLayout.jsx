@@ -160,7 +160,7 @@ function VertPrintChart({ data }) {
 
 const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle }, ref) {
   const shotsRows      = useMemo(() => deduplicateShots(rows), [rows])
-  const lensData       = useMemo(() => lensUsage(shotsRows), [shotsRows])
+  const { data: lensData, unknownCount: lensUnknown } = useMemo(() => lensUsage(shotsRows), [shotsRows])
   const suppData       = useMemo(() => supportUsage(shotsRows), [shotsRows])
   const suppExcluded   = useMemo(() => shotsRows.length - suppData.reduce((s, d) => s + d.count, 0), [shotsRows, suppData])
   const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
@@ -219,6 +219,11 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
       {/* Lens Usage */}
       <SectionCard title="Lens Usage">
         <HorizPrintChart data={lensData} />
+        {lensUnknown > 0 && (
+          <div style={{ marginTop: 12, fontSize: 9, fontFamily: 'DM Mono, monospace', color: '#a09e99' }}>
+            {lensUnknown} of {shotsRows.length} shots ({Math.round((lensUnknown / shotsRows.length) * 100)}%) had no lens data recorded and are not shown.
+          </div>
+        )}
       </SectionCard>
 
       {/* Camera Support */}

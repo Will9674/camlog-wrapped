@@ -85,7 +85,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
 
   // Desktop: Recharts horizontal bar chart
   const longestLabel = Math.max(...formatted.map((d) => (d.label || '').length))
-  const yAxisWidth = Math.min(Math.max(80, longestLabel * 7.5), 200)
+  const yAxisWidth = Math.min(Math.max(80, longestLabel * 9), 260)
 
   const barHeight = 28
   const gap = 10

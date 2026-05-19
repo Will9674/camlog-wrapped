@@ -136,21 +136,23 @@ function normalizeLens(raw) {
 }
 
 export function lensUsage(rows) {
+  let unknownCount = 0
   const counts = {}
   rows.forEach((r) => {
     const tokens = (r._lens || '').split(',').map(l => normalizeLens(l)).filter(Boolean)
     if (tokens.length === 0) {
-      counts['Unknown'] = (counts['Unknown'] || 0) + 1
+      unknownCount++
     } else {
       tokens.forEach(l => { counts[l] = (counts[l] || 0) + 1 })
     }
   })
   const total = Object.values(counts).reduce((s, c) => s + c, 0)
-  return roundTo100(
+  const data = roundTo100(
     Object.entries(counts)
       .map(([lens, count]) => ({ name: lens, count, pct: total ? (count / total) * 100 : 0 }))
       .sort((a, b) => b.count - a.count)
   )
+  return { data, unknownCount }
 }
 
 export function supportUsage(rows) {
@@ -243,6 +245,13 @@ function normalizeFilter(raw) {
   // Bare filter name with no number → skip
   // Exception: "clear" variants (e.g. "Clear (Nose Grease)") are valid without a number
   if (!/\d/.test(s) && !/\bclear\b/i.test(s)) return null
+
+  // Clear variants with extra info → title case (not uppercase) for readability
+  // Normalize missing space before parenthesis: "CLEAR(NOSE GREASE)" → "Clear (Nose Grease)"
+  if (/\bclear\b/i.test(s)) {
+    const spaced = s.replace(/([a-zA-Z\d])\(/, '$1 (').replace(/\)([a-zA-Z\d])/, ') $1')
+    return spaced.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  }
 
   // Default: uppercase abbreviation, with any remaining fractions normalized
   return normalizeFractions(s).toUpperCase()

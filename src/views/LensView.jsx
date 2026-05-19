@@ -3,7 +3,9 @@ import HorizBarChart from '../components/HorizBarChart'
 import { lensUsage, deduplicateShots } from '../utils/stats'
 
 export default function LensView({ rows, stats }) {
-  const data = lensUsage(deduplicateShots(rows))
+  const dedupedRows = deduplicateShots(rows)
+  const { data, unknownCount } = lensUsage(dedupedRows)
+  const totalShots = dedupedRows.length
 
   return (
     <div>
@@ -13,6 +15,11 @@ export default function LensView({ rows, stats }) {
           Lens Usage
         </h2>
         <HorizBarChart data={data} valueKey="pct" showPct countLabel="Shots" />
+        {unknownCount > 0 && (
+          <p className="mt-4 text-xs font-['DM_Mono'] text-[#a09e99]">
+            {unknownCount} of {totalShots} {totalShots === 1 ? 'shot' : 'shots'} ({Math.round((unknownCount / totalShots) * 100)}%) had no lens data recorded and are not shown.
+          </p>
+        )}
       </div>
     </div>
   )

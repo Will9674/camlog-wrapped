@@ -56,22 +56,38 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
       : `${d[valueKey]} ${countLabel}`,
   }))
 
-  const longestLabel = Math.max(...formatted.map((d) => (d.label || '').length))
-  const yAxisWidth = isNarrow
-    ? Math.min(Math.max(60, longestLabel * 6), 120)
-    : Math.min(Math.max(80, longestLabel * 7.5), 200)
+  // Mobile: full-width CSS bars so every bar uses the entire card width
+  if (isNarrow) {
+    const maxVal = Math.max(...formatted.map((d) => d.displayValue), 1)
+    const scaledMax = maxVal * 1.1
 
-  const rightMargin = isNarrow ? 72 : 180
+    return (
+      <div ref={containerRef} className="w-full">
+        {formatted.map((d) => {
+          const widthPct = Math.max(0.5, (d.displayValue / scaledMax) * 100)
+          return (
+            <div key={d.name} className="mb-4">
+              <div className="flex justify-between items-baseline mb-1.5">
+                <span className="font-['DM_Mono'] text-[11px] text-[#1a1916] leading-tight">{d.label}</span>
+                <span className="font-['DM_Mono'] text-[10px] text-[#6b6762] ml-3 flex-shrink-0">{d.barLabel}</span>
+              </div>
+              <div className="h-5 rounded-sm overflow-hidden" style={{ background: '#f0ece4' }}>
+                <div className="h-full rounded-sm" style={{ width: `${widthPct}%`, minWidth: 3, background: '#1a1916' }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // Desktop: Recharts horizontal bar chart
+  const longestLabel = Math.max(...formatted.map((d) => (d.label || '').length))
+  const yAxisWidth = Math.min(Math.max(80, longestLabel * 7.5), 200)
 
   const barHeight = 28
   const gap = 10
   const height = Math.max(120, formatted.length * (barHeight + gap) + 40)
-
-  // On mobile, scale the axis to the largest bar so small-% bars aren't invisible slivers
-  const maxBarValue = showPct ? Math.max(...formatted.map((d) => d.displayValue), 1) : null
-  const xDomain = isNarrow && showPct && maxBarValue !== null
-    ? [0, Math.min(100, Math.ceil(maxBarValue * 1.2))]
-    : [0, showPct ? 100 : 'auto']
 
   return (
     <div ref={containerRef} style={{ width: '100%', height }}>
@@ -79,12 +95,12 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
         <BarChart
           data={formatted}
           layout="vertical"
-          margin={{ top: 4, right: rightMargin, bottom: 4, left: 4 }}
+          margin={{ top: 4, right: 180, bottom: 4, left: 4 }}
           barSize={barHeight}
         >
           <XAxis
             type="number"
-            domain={xDomain}
+            domain={[0, showPct ? 100 : 'auto']}
             tickFormatter={showPct ? (v) => `${v}%` : undefined}
             tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#a09e99' }}
             axisLine={false}
@@ -94,7 +110,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
             type="category"
             dataKey="label"
             width={yAxisWidth}
-            tick={{ fontFamily: 'DM Mono', fontSize: isNarrow ? 10 : 12, fill: '#1a1916' }}
+            tick={{ fontFamily: 'DM Mono', fontSize: 12, fill: '#1a1916' }}
             axisLine={false}
             tickLine={false}
           />
@@ -104,9 +120,9 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
               <Cell key={i} fill="#1a1916" />
             ))}
             <LabelList
-              dataKey={isNarrow ? 'barLabel' : 'barLabelFull'}
+              dataKey="barLabelFull"
               position="right"
-              style={{ fontFamily: 'DM Mono', fontSize: isNarrow ? 10 : 11, fill: '#6b6762' }}
+              style={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#6b6762' }}
             />
           </Bar>
         </BarChart>

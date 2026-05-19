@@ -67,6 +67,12 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
   const gap = 10
   const height = Math.max(120, formatted.length * (barHeight + gap) + 40)
 
+  // On mobile, scale the axis to the largest bar so small-% bars aren't invisible slivers
+  const maxBarValue = showPct ? Math.max(...formatted.map((d) => d.displayValue), 1) : null
+  const xDomain = isNarrow && showPct && maxBarValue !== null
+    ? [0, Math.min(100, Math.ceil(maxBarValue * 1.2))]
+    : [0, showPct ? 100 : 'auto']
+
   return (
     <div ref={containerRef} style={{ width: '100%', height }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -78,7 +84,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
         >
           <XAxis
             type="number"
-            domain={[0, showPct ? 100 : 'auto']}
+            domain={xDomain}
             tickFormatter={showPct ? (v) => `${v}%` : undefined}
             tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#a09e99' }}
             axisLine={false}

@@ -25,10 +25,11 @@ const SUPPORT_RULES = [
   { label: 'Steadicam',    pattern: /\bste[ae]?di(cam)?\b|\bsteady[\s-]?cam\b/i },
   // Handheld / Hand Held / Hand-Held / HH
   { label: 'Handheld',     pattern: /\bhand[\s-]?held\b|\bHH\b/i },
-  { label: 'High Hat',     pattern: /\bhigh[\s-]?hat\b/i },
+  { label: 'High Hat',     pattern: /\b(?:high|hi)[\s-]?hat\b/i },
   { label: 'Low Hat',      pattern: /\blow[\s-]?hat\b/i },
-  // Sticks / Stick / Baby Sticks / Standard Sticks
-  { label: 'Sticks',       pattern: /\b(baby[\s-]+sticks?|standard[\s-]+sticks?|sticks?)\b/i },
+  // Sticks / Stick / Baby Sticks / Standard Sticks / Standards / Babies
+  // Excludes slate clapper notations: No Sticks, 2nd Sticks, Mid Sticks, Tail Sticks, Head Sticks
+  { label: 'Sticks',       pattern: /(?:(?<!(?:no|2nd|mid|tail|head)\s)\bsticks?\b|\bbaby[\s-]+sticks?\b|\bstandard[\s-]+sticks?\b|\bstandards\b|\bbabies\b)/i },
   { label: 'Slider',       pattern: /\bslider\b/i },
   { label: 'Dolly',        pattern: /\bdolly\b/i },
   { label: 'Jib',          pattern: /\bjib\b/i },

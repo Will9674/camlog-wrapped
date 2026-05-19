@@ -169,10 +169,16 @@ export function takesPerDay(rows) {
 }
 
 function normalizeFilter(raw) {
-  const s = raw.trim().replace(/\s+/g, ' ')
+  // Remove stray dots/commas between a letter and a digit before any other rules.
+  // Treats "ND.3", "ND,3", "BPM,1/4", "Diopter,1" etc. the same as "ND3", "BPM 1/4", "Diopter 1".
+  const s = raw.trim()
+    .replace(/\s+/g, ' ')
+    .replace(/([a-z])[.,](\d)/gi, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
   if (!s) return null
 
-  // ND filters: ND3, ND 3, ND0.3, ND 0.3, ND.3, ND3 INT, ND6 EXT → "ND 0.3" etc.
+  // ND filters: ND3, ND 3, ND0.3, ND 0.3, ND3 INT, ND6 EXT → "ND 0.3" etc.
   // Integers are shorthand for tenths: 3 → 0.3, 6 → 0.6, 12 → 1.2
   // INT/EXT suffix (built-in vs mattebox) is ignored — same filter density either way
   const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*(?:int|ext)?$/i)
@@ -197,8 +203,8 @@ function normalizeFilter(raw) {
   // Clear
   if (/^clear$/i.test(s)) return 'Clear'
 
-  // Default: title-case for consistent case normalization across spelling variations
-  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  // Default: uppercase — filter names are abbreviations (BDFX, BPM, HBM, etc.)
+  return s.toUpperCase()
 }
 
 export function filterUsage(rows) {

@@ -132,10 +132,14 @@ export function cameraUsage(rows) {
 export function lensUsage(rows) {
   const counts = {}
   rows.forEach((r) => {
-    const lens = r._lens || 'Unknown'
-    counts[lens] = (counts[lens] || 0) + 1
+    const tokens = (r._lens || '').split(',').map(l => l.trim()).filter(Boolean)
+    if (tokens.length === 0) {
+      counts['Unknown'] = (counts['Unknown'] || 0) + 1
+    } else {
+      tokens.forEach(l => { counts[l] = (counts[l] || 0) + 1 })
+    }
   })
-  const total = rows.length
+  const total = Object.values(counts).reduce((s, c) => s + c, 0)
   return roundTo100(
     Object.entries(counts)
       .map(([lens, count]) => ({ name: lens, count, pct: total ? (count / total) * 100 : 0 }))

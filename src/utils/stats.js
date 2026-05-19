@@ -171,11 +171,12 @@ export function takesPerDay(rows) {
 export function filterUsage(rows) {
   const counts = {}
   rows.forEach((r) => {
-    const f = r._filter
-    if (!f) return
-    counts[f] = (counts[f] || 0) + 1
+    if (!r._filter) return
+    r._filter.split(',').map(f => f.trim()).filter(Boolean).forEach(f => {
+      counts[f] = (counts[f] || 0) + 1
+    })
   })
-  const total = rows.filter((r) => r._filter).length
+  const total = Object.values(counts).reduce((s, c) => s + c, 0)
   return roundTo100(
     Object.entries(counts)
       .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))

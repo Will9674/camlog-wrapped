@@ -206,6 +206,9 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
             </div>
 
             <ViewComponent rows={filteredRows} stats={stats} />
+            <p className="mt-10 text-center text-[11px] font-['DM_Mono'] text-[#c4bfb8]">
+              CineLog Wrapped was created by Will Hecht using Claude Code
+            </p>
           </div>
         </main>
       </div>

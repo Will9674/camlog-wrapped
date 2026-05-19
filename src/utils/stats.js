@@ -169,43 +169,58 @@ export function takesPerDay(rows) {
 }
 
 function normalizeFilter(raw) {
-  // Normalise common entry variations before applying rules:
-  // 1. Collapse whitespace
-  // 2. Strip stray dots/commas between a letter and a digit (ND.3, BPM,1/4 → ND3, BPM 1/4)
-  // 3. Convert dash-fraction notation to slash (1-4 → 1/4, 1-8 → 1/8) so BPM 1-4 = BPM 1/4
-  const s = raw.trim()
-    .replace(/\s+/g, ' ')
-    .replace(/([a-z])[.,](\d)/gi, '$1 $2')   // strip stray dot/comma: ND.3 → ND 3
-    .replace(/([a-z])(\d)/gi, '$1 $2')        // ensure space between abbrev and number: BDFX2 → BDFX 2
-    .replace(/\b(1)-(2|4|8|16)\b/g, '1/$2')  // dash-fraction → slash: 1-4 → 1/4 (needs space first)
+  let s = raw.trim().replace(/\s+/g, ' ')
+  if (!s) return null
+
+  s = s
+    .replace(/([a-z])[.,](\d)/gi, '$1 $2')        // strip stray dot/comma: ND.3 → ND 3
+    .replace(/([a-z])(\d)/gi, '$1 $2')             // space between abbrev and number: BDFX2 → BDFX 2
+    .replace(/\b1\s*[-–]\s*(2|4|8|16)\b/g, '1/$1') // dash/en-dash fraction → slash: 1-4 → 1/4
     .replace(/\s+/g, ' ')
     .trim()
   if (!s) return null
 
-  // ND filters: ND3, ND 3, ND0.3, ND 0.3, ND3 INT, ND6 EXT → "ND 0.3" etc.
+  // ND filters: ND3, ND 3, ND0.3, ND 0.3, ND6 SE, ND12 HE, ND3SE → "ND 0.3", "ND 0.6 SE", "ND 1.2 HE"
   // Integers are shorthand for tenths: 3 → 0.3, 6 → 0.6, 12 → 1.2
-  // INT/EXT suffix (built-in vs mattebox) is ignored — same filter density either way
-  const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*(?:int|ext)?$/i)
+  // Letter suffixes (SE, HE, INT, EXT, etc.) are preserved — they identify distinct filter products
+  const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*([a-z]+(?:\/[a-z]+)?)?$/i)
   if (ndMatch) {
     const numStr = ndMatch[1]
+    const rawSuffix = ndMatch[2] || ''
+    // INT/EXT are form-factor variants (built-in vs mattebox) — strip them, same filter density
+    // All other suffixes (SE, HE, etc.) identify distinct products — preserve them
+    const suffix = /^(?:int(?:\/ext)?|ext(?:\/int)?)$/i.test(rawSuffix) ? '' : rawSuffix.toUpperCase()
     let val = parseFloat(numStr)
     if (!numStr.includes('.')) val = val / 10
-    return `ND ${val.toFixed(1)}`
+    return suffix ? `ND ${val.toFixed(1)} ${suffix}` : `ND ${val.toFixed(1)}`
   }
+  // Bare "ND" with no strength → skip
+  if (/^nd$/i.test(s)) return null
 
-  // Split Diopter: Split DIO 2, Split Diopter 1 → "Split Diopter +1" (distinct from regular)
-  const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+)$/i)
+  // Split Diopter: supports integer and fraction strengths
+  // "Split DIO 2", "Split Diopter 1/2" → "Split Diopter +2", "Split Diopter +1/2"
+  const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
   if (splitDioMatch) return `Split Diopter +${splitDioMatch[1]}`
 
-  // Diopter: DIO1, DIO +1, Diopter1, Diopter +1, Diopter 1 → "Diopter +1"
-  const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)$/i)
+  // Diopter: integer and fraction strengths
+  // "DIO1", "DIO +1", "Diopter 1/2" → "Diopter +1", "Diopter +1/2"
+  const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
   if (dioMatch) return `Diopter +${dioMatch[1]}`
+  // Bare "DIO"/"Diopter" with no strength → skip
+  if (/^(?:dio(?:pter)?)$/i.test(s)) return null
 
   // Polarizer: Pola, POLA, Polarizer, Polariser → "Pola"
   if (/^pola(?:ri[sz]er)?$/i.test(s)) return 'Pola'
 
-  // Clear
+  // Clear (exact) → "Clear"; variants like "Clear (Nose Grease)" fall through to default
   if (/^clear$/i.test(s)) return 'Clear'
+
+  // Bare fraction with no filter name (e.g., "1/2", "1/4") → skip
+  if (/^\d+\/\d+$/.test(s)) return null
+
+  // Bare filter name with no number → skip
+  // Exception: entries containing "clear" (e.g., "Clear (Nose Grease)") are valid without a number
+  if (!/\d/.test(s) && !/\bclear\b/i.test(s)) return null
 
   // Default: uppercase — filter names are abbreviations (BDFX, BPM, HBM, etc.)
   return s.toUpperCase()

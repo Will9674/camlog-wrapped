@@ -40,4 +40,9 @@
   #root {
     min-height: 100svh;
   }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.5);
+    cursor: pointer;
+  }
 }

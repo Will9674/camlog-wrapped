@@ -169,11 +169,15 @@ export function takesPerDay(rows) {
 }
 
 function normalizeFilter(raw) {
-  // Remove stray dots/commas between a letter and a digit before any other rules.
-  // Treats "ND.3", "ND,3", "BPM,1/4", "Diopter,1" etc. the same as "ND3", "BPM 1/4", "Diopter 1".
+  // Normalise common entry variations before applying rules:
+  // 1. Collapse whitespace
+  // 2. Strip stray dots/commas between a letter and a digit (ND.3, BPM,1/4 → ND3, BPM 1/4)
+  // 3. Convert dash-fraction notation to slash (1-4 → 1/4, 1-8 → 1/8) so BPM 1-4 = BPM 1/4
   const s = raw.trim()
     .replace(/\s+/g, ' ')
-    .replace(/([a-z])[.,](\d)/gi, '$1 $2')
+    .replace(/([a-z])[.,](\d)/gi, '$1 $2')   // strip stray dot/comma: ND.3 → ND 3
+    .replace(/([a-z])(\d)/gi, '$1 $2')        // ensure space between abbrev and number: BDFX2 → BDFX 2
+    .replace(/\b(1)-(2|4|8|16)\b/g, '1/$2')  // dash-fraction → slash: 1-4 → 1/4 (needs space first)
     .replace(/\s+/g, ' ')
     .trim()
   if (!s) return null

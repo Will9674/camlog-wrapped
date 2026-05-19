@@ -69,7 +69,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
             <div key={d.name} className="mb-4">
               <div className="flex justify-between items-baseline mb-1.5">
                 <span className="font-['DM_Mono'] text-[11px] text-[#1a1916] leading-tight">{d.label}</span>
-                <span className="font-['DM_Mono'] text-[10px] text-[#6b6762] ml-3 flex-shrink-0">{d.barLabel}</span>
+                <span className="font-['DM_Mono'] text-[10px] text-[#6b6762] ml-3 flex-shrink-0">{d.barLabelFull}</span>
               </div>
               <div className="h-5 rounded-sm overflow-hidden" style={{ background: '#f0ece4' }}>
                 <div className="h-full rounded-sm" style={{ width: `${widthPct}%`, minWidth: 3, background: '#1a1916' }} />

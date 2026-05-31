@@ -82,7 +82,10 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       const { compressToEncodedURIComponent } = await import('lz-string')
       const payload = JSON.stringify({ projectTitle, rows })
       const compressed = compressToEncodedURIComponent(payload)
-      const longUrl = `${window.location.origin}${window.location.pathname}#s=${compressed}`
+      const canonicalOrigin = window.location.hostname === 'localhost'
+        ? window.location.origin
+        : 'https://camlog-wrapped.vercel.app'
+      const longUrl = `${canonicalOrigin}/#s=${compressed}`
 
       let shareUrl = longUrl
       try {

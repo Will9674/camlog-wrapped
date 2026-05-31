@@ -1,41 +1,30 @@
-function Toggle({ label, checked, onChange, dark }) {
+import { useTheme } from '../ThemeContext.jsx'
+
+function Toggle({ label, checked, onChange }) {
   return (
     <label className="flex items-center gap-2 cursor-pointer select-none">
       <div
         onClick={() => onChange(!checked)}
-        className={`relative w-9 h-5 rounded-full transition-colors duration-150 ${
-          checked
-            ? dark ? 'bg-white/80' : 'bg-[#1a1916]'
-            : dark ? 'bg-white/15' : 'bg-[#e2dfd8]'
-        }`}
+        className={`relative w-9 h-5 rounded-full transition-colors duration-150 ${checked ? 'bg-[#e63946]' : 'bg-(--c-bar-track)'}`}
       >
         <div
-          className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform duration-150 shadow-sm ${
-            checked ? 'translate-x-4' : 'translate-x-0.5'
-          } ${dark ? (checked ? 'bg-[#1a1916]' : 'bg-white/60') : 'bg-white'}`}
+          className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform duration-150 shadow-sm bg-white ${checked ? 'translate-x-4' : 'translate-x-0.5'}`}
         />
       </div>
-      <span className={`text-sm font-['DM_Sans'] ${dark ? 'text-white/60' : 'text-[#1a1916]'}`}>
-        {label}
-      </span>
+      <span className="text-sm font-['DM_Sans'] text-(--c-ink2)">{label}</span>
     </label>
   )
 }
 
-export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [], dark = false }) {
+export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [] }) {
+  useTheme() // subscribe so filter panel re-renders on theme change
   const { cameras, dateRange } = filters
 
-  const labelClass = `text-xs uppercase tracking-widest font-['DM_Mono'] mb-2 ${dark ? 'text-white' : 'text-[#a09e99]'}`
+  const labelClass = `text-xs uppercase tracking-widest font-['DM_Mono'] mb-2 text-(--c-label)`
   const btnBase = `px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors`
-  const btnActive = dark
-    ? 'bg-white/90 text-[#1a1916] border-transparent'
-    : 'bg-[#1a1916] text-white border-[#1a1916]'
-  const btnInactive = dark
-    ? 'bg-transparent text-white/50 border-white/15 hover:text-white/80 hover:border-white/30'
-    : 'bg-white text-[#1a1916] border-[#e2dfd8] hover:border-[#1a1916]'
-  const inputClass = dark
-    ? 'w-full border border-white/15 rounded-lg px-2 py-1.5 text-xs font-["DM_Mono"] bg-white/8 text-white/70 focus:outline-none focus:border-white/40'
-    : 'w-full border border-[#e2dfd8] rounded-lg px-2 py-1.5 text-xs font-["DM_Mono"] bg-white text-[#1a1916] focus:outline-none focus:border-[#1a1916]'
+  const btnActive = 'bg-[#e63946] text-white border-transparent'
+  const btnInactive = 'bg-transparent text-(--c-nav-fg) border-(--c-border) hover:text-(--c-nav-fg-hover) hover:border-(--c-border-strong)'
+  const inputClass = 'w-full border border-(--c-border) rounded-lg px-2 py-1.5 text-xs font-["DM_Mono"] bg-(--c-surface) text-(--c-ink) focus:outline-none focus:border-(--c-border-strong)'
 
   function toggleCamera(cam) {
     let next
@@ -98,7 +87,7 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
           {(dateRange[0] !== dateMin || dateRange[1] !== dateMax) && (
             <button
               onClick={() => onChange({ ...filters, dateRange: [dateMin, dateMax] })}
-              className={`text-xs font-['DM_Mono'] text-left transition-colors ${dark ? 'text-white/30 hover:text-white/60' : 'text-[#a09e99] hover:text-[#1a1916]'}`}
+              className="text-xs font-['DM_Mono'] text-left transition-colors text-(--c-ink3) hover:text-(--c-ink2)"
             >
               Reset range
             </button>

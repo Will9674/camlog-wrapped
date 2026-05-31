@@ -9,15 +9,16 @@ import {
   Cell,
   LabelList,
 } from 'recharts'
+import { useTheme } from '../ThemeContext.jsx'
 
 const pl = (n, plural) => `${n} ${n === 1 ? plural.replace(/s$/, '') : plural}`
 
 const CustomTooltip = ({ active, payload, label, countLabel }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-[#e2dfd8] px-3 py-2 text-sm font-['DM_Mono']">
-      <div className="text-[#1a1916] font-medium">{label}</div>
-      <div className="text-[#a09e99]">{payload[0].value}{payload[0].unit} · {pl(payload[0].payload.count, countLabel)}</div>
+    <div className="bg-(--c-surface2) border border-(--c-border) px-3 py-2 text-sm font-['DM_Mono'] rounded">
+      <div className="text-(--c-ink) font-medium">{label}</div>
+      <div className="text-(--c-ink2)">{payload[0].value}{payload[0].unit} · {pl(payload[0].payload.count, countLabel)}</div>
     </div>
   )
 }
@@ -25,6 +26,13 @@ const CustomTooltip = ({ active, payload, label, countLabel }) => {
 export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, labelFormatter, countLabel = 'Shots' }) {
   const containerRef = useRef(null)
   const [containerWidth, setContainerWidth] = useState(600)
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
+
+  const tickColor = isLight ? '#6c6c70' : '#8e8e93'
+  const labelColor = isLight ? '#1c1c1e' : '#f2f2f7'
+  const cursorFill = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'
+  const barTrack = isLight ? '#e0e0e5' : '#2a2a2c'
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -38,7 +46,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-40 text-[#a09e99] font-['DM_Mono'] text-sm">
+      <div className="flex items-center justify-center h-40 text-(--c-ink2) font-['DM_Mono'] text-sm">
         No data
       </div>
     )
@@ -58,7 +66,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
       : pl(d.count, countLabel),
   }))
 
-  // Mobile: full-width CSS bars so every bar uses the entire card width
+  // Mobile: full-width CSS bars
   if (isNarrow) {
     const maxVal = Math.max(...formatted.map((d) => d.displayValue), 1)
     const scaledMax = maxVal * 1.1
@@ -70,11 +78,11 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
           return (
             <div key={d.name} className="mb-4">
               <div className="flex justify-between items-baseline mb-1.5">
-                <span className="font-['DM_Mono'] text-[11px] text-[#1a1916] leading-tight">{d.label}</span>
-                <span className="font-['DM_Mono'] text-[10px] text-[#6b6762] ml-3 flex-shrink-0">{d.barLabelFull}</span>
+                <span className="font-['DM_Mono'] text-[11px] text-(--c-ink) leading-tight">{d.label}</span>
+                <span className="font-['DM_Mono'] text-[10px] text-(--c-ink2) ml-3 flex-shrink-0">{d.barLabelFull}</span>
               </div>
-              <div className="h-5 rounded-sm overflow-hidden" style={{ background: '#f0ece4' }}>
-                <div className="h-full rounded-sm" style={{ width: `${widthPct}%`, minWidth: 3, background: '#1a1916' }} />
+              <div className="h-5 rounded-sm overflow-hidden" style={{ background: barTrack }}>
+                <div className="h-full rounded-sm" style={{ width: `${widthPct}%`, minWidth: 3, background: '#e63946' }} />
               </div>
             </div>
           )
@@ -104,7 +112,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
             type="number"
             domain={[0, showPct ? 100 : 'auto']}
             tickFormatter={showPct ? (v) => `${v}%` : undefined}
-            tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#a09e99' }}
+            tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: tickColor }}
             axisLine={false}
             tickLine={false}
           />
@@ -112,19 +120,19 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
             type="category"
             dataKey="label"
             width={yAxisWidth}
-            tick={{ fontFamily: 'DM Mono', fontSize: 12, fill: '#1a1916' }}
+            tick={{ fontFamily: 'DM Mono', fontSize: 12, fill: labelColor }}
             axisLine={false}
             tickLine={false}
           />
-          <Tooltip content={<CustomTooltip countLabel={countLabel} />} cursor={{ fill: '#f5f3ee' }} />
+          <Tooltip content={<CustomTooltip countLabel={countLabel} />} cursor={{ fill: cursorFill }} />
           <Bar dataKey="displayValue" radius={[0, 2, 2, 0]} unit={showPct ? '%' : ''}>
             {formatted.map((_, i) => (
-              <Cell key={i} fill="#1a1916" />
+              <Cell key={i} fill="#e63946" />
             ))}
             <LabelList
               dataKey="barLabelFull"
               position="right"
-              style={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#6b6762' }}
+              style={{ fontFamily: 'DM Mono', fontSize: 11, fill: tickColor }}
             />
           </Bar>
         </BarChart>

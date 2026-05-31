@@ -3,13 +3,52 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f0ece4;
-  --color-surface: #ffffff;
-  --color-border: #e8e3da;
-  --color-ink: #1a1916;
-  --color-muted: #a09e99;
   --font-sans: 'DM Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
+}
+
+:root {
+  --c-bg: #111111;
+  --c-surface: #1c1c1e;
+  --c-surface2: #2a2a2c;
+  --c-sidebar: #1c1c1e;
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border-strong: rgba(255, 255, 255, 0.14);
+  --c-ink: #f2f2f7;
+  --c-ink2: #8e8e93;
+  --c-ink3: #48484a;
+  --c-accent: #e63946;
+  --c-label: #e63946;
+  --c-nav-fg: rgba(255, 255, 255, 0.4);
+  --c-nav-fg-hover: rgba(255, 255, 255, 0.7);
+  --c-nav-hover-bg: rgba(255, 255, 255, 0.06);
+  --c-bar-track: #2a2a2c;
+  --c-cursor: rgba(255, 255, 255, 0.04);
+  --c-dropzone-border: rgba(255, 255, 255, 0.12);
+  --c-dropzone-bg: rgba(255, 255, 255, 0.03);
+  --c-dropzone-hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+html.light {
+  --c-bg: #f2f2f7;
+  --c-surface: #ffffff;
+  --c-surface2: #f0f0f5;
+  --c-sidebar: #e5e5ea;
+  --c-border: rgba(0, 0, 0, 0.09);
+  --c-border-strong: rgba(0, 0, 0, 0.15);
+  --c-ink: #1c1c1e;
+  --c-ink2: #6c6c70;
+  --c-ink3: #aeaeb2;
+  --c-accent: #e63946;
+  --c-label: #e63946;
+  --c-nav-fg: #6c6c70;
+  --c-nav-fg-hover: #1c1c1e;
+  --c-nav-hover-bg: rgba(0, 0, 0, 0.05);
+  --c-bar-track: #e0e0e5;
+  --c-cursor: rgba(0, 0, 0, 0.04);
+  --c-dropzone-border: rgba(0, 0, 0, 0.12);
+  --c-dropzone-bg: rgba(0, 0, 0, 0.02);
+  --c-dropzone-hover-bg: rgba(0, 0, 0, 0.04);
 }
 
 @media print {
@@ -30,8 +69,8 @@
   }
 
   body {
-    background-color: #f0ece4;
-    color: #1a1916;
+    background-color: var(--c-bg);
+    color: var(--c-ink);
     font-family: 'DM Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -42,7 +81,11 @@
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) opacity(0.5);
+    filter: invert(1) opacity(0.4);
     cursor: pointer;
+  }
+
+  html.light input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: opacity(0.4);
   }
 }

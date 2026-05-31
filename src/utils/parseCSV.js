@@ -50,7 +50,7 @@ export function parseSupportType(notes, description = '') {
 
 export function formatDate(dateStr) {
   if (!dateStr) return null
-  // CineLog dates may come as M/D/YYYY or YYYY-MM-DD
+  // Dates may come as M/D/YYYY or YYYY-MM-DD
   const parts = dateStr.split('/')
   if (parts.length === 3) {
     const [m, d, y] = parts

@@ -39,7 +39,7 @@ export default function App() {
   return (
     <div>
       {error && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-white border border-[#e2dfd8] text-[#1a1916] text-sm font-['DM_Mono'] px-4 py-2 rounded shadow-sm z-50">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-(--c-surface) border border-(--c-border) text-(--c-ink) text-sm font-['DM_Mono'] px-4 py-2 rounded shadow-sm z-50">
           {error}
         </div>
       )}

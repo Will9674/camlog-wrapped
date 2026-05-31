@@ -12,19 +12,19 @@ export default function SupportView({ rows, stats }) {
   return (
     <div>
       <SummaryBar stats={stats} />
-      <div className="bg-white border border-[#e8e3da] rounded-xl p-6 shadow-sm">
-        <h2 className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-5">
+      <div className="bg-(--c-surface) border border-(--c-border) rounded-xl p-6">
+        <h2 className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-5">
           Camera Support
         </h2>
         {data.length === 0 ? (
-          <div className="text-[#a09e99] font-['DM_Mono'] text-sm py-8 text-center">
+          <div className="text-(--c-ink2) font-['DM_Mono'] text-sm py-8 text-center">
             No support data found in Notes field
           </div>
         ) : (
           <>
             <HorizBarChart data={data} valueKey="pct" showPct countLabel="Shots" />
             {excludedShots > 0 && (
-              <p className="mt-4 text-xs font-['DM_Mono'] text-[#a09e99]">
+              <p className="mt-4 text-xs font-['DM_Mono'] text-(--c-ink2)">
                 {excludedShots} of {totalShots} {totalShots === 1 ? 'shot' : 'shots'} ({Math.round((excludedShots / totalShots) * 100)}%) had no recognized camera support data and are not shown.
               </p>
             )}

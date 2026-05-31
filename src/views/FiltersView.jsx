@@ -8,12 +8,12 @@ export default function FiltersView({ rows, stats }) {
   return (
     <div>
       <SummaryBar stats={stats} />
-      <div className="bg-white border border-[#e8e3da] rounded-xl p-6 shadow-sm">
-        <h2 className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-5">
+      <div className="bg-(--c-surface) border border-(--c-border) rounded-xl p-6">
+        <h2 className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-5">
           Optical Filters
         </h2>
         {data.length === 0 ? (
-          <div className="text-[#a09e99] font-['DM_Mono'] text-sm py-8 text-center">
+          <div className="text-(--c-ink2) font-['DM_Mono'] text-sm py-8 text-center">
             No filter data found in this export
           </div>
         ) : (

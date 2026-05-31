@@ -6,6 +6,7 @@ import SupportView from '../views/SupportView'
 import DaysView from '../views/DaysView'
 import FiltersView from '../views/FiltersView'
 import CameraView from '../views/CameraView'
+import { ThemeToggleButton } from '../ThemeContext.jsx'
 import { filterRows, summaryStats, getDateRange, getCamerasInData } from '../utils/stats'
 
 const VIEWS = [
@@ -26,7 +27,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     const el = printRef.current
     if (!el || exporting) return
     setExporting(true)
-    // Bring on-screen so Recharts SVGs render fully before capture
     el.style.position = 'fixed'
     el.style.left = '0'
     el.style.top = '0'
@@ -36,10 +36,10 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       await new Promise((r) => setTimeout(r, 400))
 
       const { toPng } = await import('html-to-image')
-      const dataUrl = await toPng(el, {
-        pixelRatio: 4,
-        backgroundColor: '#f0ece4',
-      })
+      const exportOpts = { pixelRatio: 6, backgroundColor: '#f0ece4' }
+      // First pass warms up font/resource loading in html-to-image
+      await toPng(el, exportOpts)
+      const dataUrl = await toPng(el, exportOpts)
 
       const img = new Image()
       await new Promise((res) => { img.onload = res; img.src = dataUrl })
@@ -49,9 +49,8 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       const pdfH = (img.naturalHeight / img.naturalWidth) * pdfW
       const pdf = new jsPDF({ unit: 'pt', format: [pdfW, pdfH] })
       pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH)
-      pdf.save(`${projectTitle || 'CineLog-Wrapped'}.pdf`)
+      pdf.save(`${projectTitle || 'CamLog-Wrapped'}.pdf`)
     } finally {
-      // Always restore off-screen whether export succeeded or failed
       el.style.position = 'fixed'
       el.style.left = '-9999px'
       el.style.visibility = 'hidden'
@@ -84,8 +83,8 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       onClick={onClick}
       className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-['DM_Sans'] transition-colors ${
         activeView === view.id
-          ? 'bg-white/15 text-white'
-          : 'text-white/50 hover:text-white/80 hover:bg-white/8'
+          ? 'text-[#e63946] bg-[#e63946]/10'
+          : 'text-(--c-nav-fg) hover:text-(--c-nav-fg-hover) hover:bg-(--c-nav-hover-bg)'
       }`}
     >
       {view.label}
@@ -94,7 +93,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
 
   const SidebarContents = ({ onNavClick }) => (
     <>
-      <div className="text-xs uppercase tracking-widest text-white font-['DM_Mono'] mb-2">
+      <div className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-2">
         Views
       </div>
       {VIEWS.map((v) => (
@@ -107,7 +106,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           dateMin={dateMin}
           dateMax={dateMax}
           availableCameras={availableCameras}
-          dark
         />
       </div>
     </>
@@ -115,21 +113,21 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
 
   return (
     <>
-    <div className="min-h-screen flex flex-col bg-[#f0ece4] no-print">
+    <div className="min-h-screen flex flex-col bg-(--c-bg) no-print">
       {/* Top bar */}
-      <header className="relative bg-[#1a1916] px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
-        <span className="hidden sm:block font-['DM_Mono'] text-base font-medium text-white tracking-tight">
-          CineLog Wrapped
+      <header className="relative bg-(--c-surface) border-b border-(--c-border) px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
+        <span className="hidden sm:block font-['DM_Mono'] text-base font-bold text-(--c-ink) tracking-tight">
+          Cam<span className="text-[#e63946]">Log</span><span className="text-(--c-ink3)"> Wrapped</span>
         </span>
         {projectTitle && (
-          <span className="flex-1 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-white tracking-tight">
+          <span className="flex-1 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-(--c-ink) tracking-tight">
             {projectTitle}
           </span>
         )}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen((s) => !s)}
-            className="sm:hidden text-white/50 hover:text-white transition-colors"
+            className="sm:hidden text-(--c-ink2) hover:text-(--c-ink) transition-colors"
             aria-label="Toggle filters"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -138,14 +136,15 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
               <line x1="12" y1="18" x2="20" y2="18"/>
             </svg>
           </button>
+          <ThemeToggleButton />
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-1.5 px-3 h-7 rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors font-['DM_Mono'] text-xs disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 h-7 rounded-full bg-[#e63946]/20 text-[#e63946] hover:bg-[#e63946]/30 transition-colors font-['DM_Mono'] text-xs disabled:opacity-50"
             aria-label="Export PDF"
           >
             {exporting ? (
-              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
             ) : (
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -157,7 +156,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           </button>
           <button
             onClick={onReset}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors font-['DM_Mono'] text-xl leading-none"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors font-['DM_Mono'] text-xl leading-none"
             aria-label="New file"
           >
             +
@@ -167,7 +166,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — desktop */}
-        <aside className="hidden sm:flex flex-col w-72 bg-[#1a1916] flex-shrink-0 overflow-y-auto">
+        <aside className="hidden sm:flex flex-col w-72 bg-(--c-sidebar) border-r border-(--c-border) flex-shrink-0 overflow-y-auto">
           <nav className="px-14 pt-8 pb-8 flex-1">
             <SidebarContents onNavClick={(id) => setActiveView(id)} />
           </nav>
@@ -177,7 +176,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
         {sidebarOpen && (
           <div className="sm:hidden fixed inset-0 z-40 flex">
             <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-            <div className="relative z-50 w-72 bg-[#1a1916] flex flex-col overflow-y-auto">
+            <div className="relative z-50 w-72 bg-(--c-sidebar) flex flex-col overflow-y-auto">
               <div className="px-8 pt-8 pb-8">
                 <SidebarContents onNavClick={(id) => { setActiveView(id); setSidebarOpen(false) }} />
               </div>
@@ -196,8 +195,8 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
                   onClick={() => setActiveView(v.id)}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-['DM_Mono'] transition-colors ${
                     activeView === v.id
-                      ? 'bg-[#1a1916] text-white'
-                      : 'bg-white text-[#1a1916] border border-[#e8e3da]'
+                      ? 'bg-[#e63946] text-white'
+                      : 'bg-(--c-surface) text-(--c-ink2) border border-(--c-border)'
                   }`}
                 >
                   {v.label}
@@ -206,9 +205,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
             </div>
 
             <ViewComponent rows={filteredRows} stats={stats} />
-            <p className="mt-10 text-center text-[11px] font-['DM_Mono'] text-[#c4bfb8]">
-              CineLog Wrapped was created by Will Hecht using Claude Code
-            </p>
           </div>
         </main>
       </div>

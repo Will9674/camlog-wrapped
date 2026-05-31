@@ -9,8 +9,8 @@ export default function CameraView({ rows, stats }) {
     return (
       <div>
         <SummaryBar stats={stats} />
-        <div className="bg-white border border-[#e8e3da] rounded-xl p-6 shadow-sm">
-          <div className="text-[#a09e99] font-['DM_Mono'] text-sm py-8 text-center">
+        <div className="bg-(--c-surface) border border-(--c-border) rounded-xl p-6">
+          <div className="text-(--c-ink2) font-['DM_Mono'] text-sm py-8 text-center">
             No camera data found
           </div>
         </div>
@@ -21,8 +21,8 @@ export default function CameraView({ rows, stats }) {
   return (
     <div>
       <SummaryBar stats={stats} />
-      <div className="bg-white border border-[#e8e3da] rounded-xl p-6 shadow-sm">
-        <h2 className="text-xs uppercase tracking-widest text-[#a09e99] font-['DM_Mono'] mb-5">
+      <div className="bg-(--c-surface) border border-(--c-border) rounded-xl p-6">
+        <h2 className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-5">
           Camera Breakdown
         </h2>
 
@@ -49,11 +49,11 @@ export default function CameraView({ rows, stats }) {
                 className="flex-shrink-0 rounded-sm"
                 style={{ width: 14, height: 14, background: getCameraColorByIndex(cam.name, i) }}
               />
-              <span className="font-['DM_Mono'] text-sm text-[#1a1916] flex-1">{cam.name}</span>
-              <span className="font-['DM_Mono'] text-sm text-[#6b6762]">
+              <span className="font-['DM_Mono'] text-sm text-(--c-ink) flex-1">{cam.name}</span>
+              <span className="font-['DM_Mono'] text-sm text-(--c-ink2)">
                 {cam.pct.toFixed(1)}%
               </span>
-              <span className="font-['DM_Mono'] text-sm text-[#a09e99] w-24 text-right">
+              <span className="font-['DM_Mono'] text-sm text-(--c-ink3) w-24 text-right">
                 {cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}
               </span>
             </div>

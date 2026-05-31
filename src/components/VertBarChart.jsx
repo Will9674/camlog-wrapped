@@ -9,13 +9,14 @@ import {
   Cell,
   LabelList,
 } from 'recharts'
+import { useTheme } from '../ThemeContext.jsx'
 
 const CustomTooltip = ({ active, payload, label, countLabel }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-[#e2dfd8] px-3 py-2 text-sm font-['DM_Mono']">
-      <div className="text-[#a09e99]">{label}</div>
-      <div className="text-[#1a1916] font-medium">{payload[0].value} {countLabel}</div>
+    <div className="bg-(--c-surface2) border border-(--c-border) px-3 py-2 text-sm font-['DM_Mono'] rounded">
+      <div className="text-(--c-ink2)">{label}</div>
+      <div className="text-(--c-ink) font-medium">{payload[0].value} {countLabel}</div>
     </div>
   )
 }
@@ -23,6 +24,11 @@ const CustomTooltip = ({ active, payload, label, countLabel }) => {
 export default function VertBarChart({ data, countLabel = 'Shots' }) {
   const containerRef = useRef(null)
   const [containerWidth, setContainerWidth] = useState(600)
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
+
+  const tickColor = isLight ? '#6c6c70' : '#8e8e93'
+  const cursorFill = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -36,7 +42,7 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-40 text-[#a09e99] font-['DM_Mono'] text-sm">
+      <div className="flex items-center justify-center h-40 text-(--c-ink2) font-['DM_Mono'] text-sm">
         No data
       </div>
     )
@@ -69,7 +75,7 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
           <XAxis
             dataKey="name"
             tickFormatter={formatDate}
-            tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#a09e99' }}
+            tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: tickColor }}
             axisLine={false}
             tickLine={false}
             interval={tickInterval}
@@ -77,21 +83,21 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
             textAnchor={angleLabels ? 'end' : 'middle'}
           />
           <YAxis
-            tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: '#a09e99' }}
+            tick={{ fontFamily: 'DM Mono', fontSize: 11, fill: tickColor }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
           />
-          <Tooltip content={<CustomTooltip countLabel={countLabel} />} cursor={{ fill: '#f5f3ee' }} />
+          <Tooltip content={<CustomTooltip countLabel={countLabel} />} cursor={{ fill: cursorFill }} />
           <Bar dataKey="count" radius={[2, 2, 0, 0]}>
             {data.map((_, i) => (
-              <Cell key={i} fill="#1a1916" />
+              <Cell key={i} fill="#e63946" />
             ))}
             {showLabels && (
               <LabelList
                 dataKey="count"
                 position="top"
-                style={{ fontFamily: 'DM Mono', fontSize: 10, fill: '#6b6762' }}
+                style={{ fontFamily: 'DM Mono', fontSize: 10, fill: tickColor }}
               />
             )}
           </Bar>

@@ -190,7 +190,11 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
       <style>{`.print-layout svg { overflow: visible !important; }`}</style>
       {/* Header */}
       <div style={{ marginBottom: 28, paddingBottom: 16, borderBottom: '1px solid #d8d2c8' }}>
-        <div style={{ fontSize: 11, color: '#a09e99', ...s.mono, marginBottom: 4 }}>CineLog Wrapped</div>
+        <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.025em', ...s.mono, marginBottom: 6 }}>
+          <span style={{ color: '#1a1916' }}>Cam</span>
+          <span style={{ color: '#e63946' }}>Log</span>
+          <span style={{ color: '#a09e99' }}> Wrapped</span>
+        </div>
         <div style={{ fontSize: 24, fontWeight: 600, color: '#1a1916', letterSpacing: '0.06em', textTransform: 'uppercase', ...s.mono }}>
           {projectTitle}
         </div>

@@ -23,6 +23,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   const [exporting, setExporting] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [exported, setExported] = useState(false)
   const printRef = useRef(null)
   const shareRef = useRef(null)
 
@@ -71,6 +72,8 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       el.style.visibility = 'hidden'
       el.style.zIndex = '-1'
       setExporting(false)
+      setExported(true)
+      setTimeout(() => setExported(false), 2500)
     }
   }
 
@@ -79,8 +82,22 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       const { compressToEncodedURIComponent } = await import('lz-string')
       const payload = JSON.stringify({ projectTitle, rows })
       const compressed = compressToEncodedURIComponent(payload)
-      const url = `${window.location.origin}${window.location.pathname}#s=${compressed}`
-      await navigator.clipboard.writeText(url)
+      const longUrl = `${window.location.origin}${window.location.pathname}#s=${compressed}`
+
+      let shareUrl = longUrl
+      try {
+        const res = await fetch(
+          `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`
+        )
+        if (res.ok) {
+          const short = (await res.text()).trim()
+          if (short.startsWith('https://is.gd/')) shareUrl = short
+        }
+      } catch {
+        // network unavailable — fall back to long URL
+      }
+
+      await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
       setShareOpen(false)
       setTimeout(() => setCopied(false), 2500)
@@ -171,15 +188,20 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           {/* Share button + popover */}
           <div ref={shareRef} className="relative">
             <button
-              onClick={() => setShareOpen((s) => !s)}
+              onClick={() => !exporting && setShareOpen((s) => !s)}
+              disabled={exporting}
               className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                copied
+                copied || exported
                   ? 'text-[#e63946] bg-[#e63946]/10'
+                  : exporting
+                  ? 'text-[#e63946] bg-[#e63946]/10 cursor-default'
                   : 'text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg)'
               }`}
               aria-label="Share"
             >
-              {copied ? (
+              {exporting ? (
+                <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+              ) : copied || exported ? (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
@@ -227,10 +249,14 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
 
           <button
             onClick={onReset}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors font-['DM_Mono'] text-xl leading-none"
-            aria-label="New file"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors"
+            aria-label="Back to upload"
           >
-            +
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
           </button>
         </div>
       </header>

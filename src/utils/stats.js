@@ -17,15 +17,11 @@ function roundTo100(items) {
   return floored
 }
 
-export function filterRows(rows, { cameras, circledOnly, dateRange }) {
+export function filterRows(rows, { cameras, dateRange }) {
   let filtered = rows
 
   if (cameras && cameras.length > 0 && !cameras.includes('All')) {
     filtered = filtered.filter((r) => cameras.includes(r._camera))
-  }
-
-  if (circledOnly) {
-    filtered = filtered.filter((r) => r._circled)
   }
 
   if (dateRange && dateRange[0] && dateRange[1]) {

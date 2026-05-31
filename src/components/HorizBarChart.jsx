@@ -1,4 +1,3 @@
-import { useRef, useState, useEffect } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,6 +9,7 @@ import {
   LabelList,
 } from 'recharts'
 import { useTheme } from '../ThemeContext.jsx'
+import { useContainerWidth } from '../hooks/useContainerWidth'
 
 const pl = (n, plural) => `${n} ${n === 1 ? plural.replace(/s$/, '') : plural}`
 
@@ -24,8 +24,7 @@ const CustomTooltip = ({ active, payload, label, countLabel }) => {
 }
 
 export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, labelFormatter, countLabel = 'Shots' }) {
-  const containerRef = useRef(null)
-  const [containerWidth, setContainerWidth] = useState(600)
+  const [containerRef, containerWidth] = useContainerWidth()
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
@@ -33,16 +32,6 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
   const labelColor = isLight ? '#1c1c1e' : '#f2f2f7'
   const cursorFill = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'
   const barTrack = isLight ? '#e0e0e5' : '#2a2a2c'
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    const observer = new ResizeObserver((entries) => {
-      setContainerWidth(entries[0].contentRect.width)
-    })
-    observer.observe(containerRef.current)
-    setContainerWidth(containerRef.current.offsetWidth)
-    return () => observer.disconnect()
-  }, [])
 
   if (!data || data.length === 0) {
     return (
@@ -82,7 +71,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
                 <span className="font-['DM_Mono'] text-[10px] text-(--c-ink2) ml-3 flex-shrink-0">{d.barLabelFull}</span>
               </div>
               <div className="h-5 rounded-sm overflow-hidden" style={{ background: barTrack }}>
-                <div className="h-full rounded-sm" style={{ width: `${widthPct}%`, minWidth: 3, background: '#e63946' }} />
+                <div className="h-full rounded-sm" style={{ width: `${widthPct}%`, minWidth: 3, background: 'var(--c-accent)' }} />
               </div>
             </div>
           )
@@ -127,7 +116,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
           <Tooltip content={<CustomTooltip countLabel={countLabel} />} cursor={{ fill: cursorFill }} />
           <Bar dataKey="displayValue" radius={[0, 2, 2, 0]} unit={showPct ? '%' : ''}>
             {formatted.map((_, i) => (
-              <Cell key={i} fill="#e63946" />
+              <Cell key={i} style={{ fill: 'var(--c-accent)' }} />
             ))}
             <LabelList
               dataKey="barLabelFull"

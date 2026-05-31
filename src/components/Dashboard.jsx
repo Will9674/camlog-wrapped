@@ -22,6 +22,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exported, setExported] = useState(false)
+  const [exportError, setExportError] = useState(false)
   const printRef = useRef(null)
 
   async function handleExport() {
@@ -50,14 +51,17 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       const pdf = new jsPDF({ unit: 'pt', format: [pdfW, pdfH] })
       pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH)
       pdf.save(`${projectTitle || 'CamLog-Wrapped'}.pdf`)
+      setExported(true)
+      setTimeout(() => setExported(false), 2500)
+    } catch {
+      setExportError(true)
+      setTimeout(() => setExportError(false), 2500)
     } finally {
       el.style.position = 'fixed'
       el.style.left = '-9999px'
       el.style.visibility = 'hidden'
       el.style.zIndex = '-1'
       setExporting(false)
-      setExported(true)
-      setTimeout(() => setExported(false), 2500)
     }
   }
 
@@ -85,7 +89,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       onClick={onClick}
       className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-['DM_Sans'] transition-colors ${
         activeView === view.id
-          ? 'text-[#e63946] bg-[#e63946]/10'
+          ? 'text-(--c-accent) bg-(--c-accent)/10'
           : 'text-(--c-nav-fg) hover:text-(--c-nav-fg-hover) hover:bg-(--c-nav-hover-bg)'
       }`}
     >
@@ -119,7 +123,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       {/* Top bar */}
       <header className="relative bg-(--c-surface) border-b border-(--c-border) px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
         <span className="hidden sm:block font-['DM_Mono'] text-base font-bold text-(--c-ink) tracking-tight">
-          Cam<span className="text-[#e63946]">Log</span><span className="text-(--c-ink3)"> Wrapped</span>
+          Cam<span className="text-(--c-accent)">Log</span><span className="text-(--c-ink3)"> Wrapped</span>
         </span>
         {projectTitle && (
           <span className="flex-1 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-(--c-ink) tracking-tight">
@@ -145,16 +149,23 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
             onClick={handleExport}
             disabled={exporting}
             className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-              exported
-                ? 'text-[#e63946] bg-[#e63946]/10'
+              exportError
+                ? 'text-(--c-accent) bg-(--c-accent)/10'
+                : exported
+                ? 'text-(--c-accent) bg-(--c-accent)/10'
                 : exporting
-                ? 'text-[#e63946] bg-[#e63946]/10 cursor-default'
+                ? 'text-(--c-accent) bg-(--c-accent)/10 cursor-default'
                 : 'text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg)'
             }`}
-            aria-label="Export PDF"
+            aria-label={exportError ? 'Export failed' : 'Export PDF'}
           >
             {exporting ? (
               <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+            ) : exportError ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
             ) : exported ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
@@ -213,7 +224,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
                   onClick={() => setActiveView(v.id)}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-['DM_Mono'] transition-colors ${
                     activeView === v.id
-                      ? 'bg-[#e63946] text-white'
+                      ? 'bg-(--c-accent) text-white'
                       : 'bg-(--c-surface) text-(--c-ink2) border border-(--c-border)'
                   }`}
                 >

@@ -1,4 +1,3 @@
-import { useRef, useState, useEffect } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,6 +9,7 @@ import {
   LabelList,
 } from 'recharts'
 import { useTheme } from '../ThemeContext.jsx'
+import { useContainerWidth } from '../hooks/useContainerWidth'
 
 const CustomTooltip = ({ active, payload, label, countLabel }) => {
   if (!active || !payload?.length) return null
@@ -22,23 +22,12 @@ const CustomTooltip = ({ active, payload, label, countLabel }) => {
 }
 
 export default function VertBarChart({ data, countLabel = 'Shots' }) {
-  const containerRef = useRef(null)
-  const [containerWidth, setContainerWidth] = useState(600)
+  const [containerRef, containerWidth] = useContainerWidth()
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
   const tickColor = isLight ? '#6c6c70' : '#8e8e93'
   const cursorFill = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    const observer = new ResizeObserver((entries) => {
-      setContainerWidth(entries[0].contentRect.width)
-    })
-    observer.observe(containerRef.current)
-    setContainerWidth(containerRef.current.offsetWidth)
-    return () => observer.disconnect()
-  }, [])
 
   if (!data || data.length === 0) {
     return (
@@ -91,7 +80,7 @@ export default function VertBarChart({ data, countLabel = 'Shots' }) {
           <Tooltip content={<CustomTooltip countLabel={countLabel} />} cursor={{ fill: cursorFill }} />
           <Bar dataKey="count" radius={[2, 2, 0, 0]}>
             {data.map((_, i) => (
-              <Cell key={i} fill="#e63946" />
+              <Cell key={i} style={{ fill: 'var(--c-accent)' }} />
             ))}
             {showLabels && (
               <LabelList

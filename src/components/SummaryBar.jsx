@@ -1,11 +1,5 @@
 import StatCard from './StatCard'
-
-function fmtDate(dateStr) {
-  if (!dateStr) return { label: '', year: '' }
-  const [y, m, d] = dateStr.split('-')
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return { label: `${months[parseInt(m) - 1]} ${parseInt(d)}`, year: y }
-}
+import { fmtDate } from '../utils/format'
 
 export default function SummaryBar({ stats }) {
   const { totalShots, shootingDays, avgShotsPerDay, dateFirst, dateLast, busiestDay } = stats

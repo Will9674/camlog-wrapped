@@ -1,23 +1,8 @@
 import { useState, useMemo } from 'react'
 import StatCard from '../components/StatCard'
+import Toggle from '../components/Toggle'
 import VertBarChart from '../components/VertBarChart'
 import { takesPerDay, deduplicateShots } from '../utils/stats'
-
-function Toggle({ label, checked, onChange }) {
-  return (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`relative w-9 h-5 rounded-full transition-colors duration-150 ${checked ? 'bg-[#e63946]' : 'bg-(--c-bar-track)'}`}
-      >
-        <div
-          className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform duration-150 shadow-sm bg-white ${checked ? 'translate-x-4' : 'translate-x-0.5'}`}
-        />
-      </div>
-      <span className="text-sm font-['DM_Sans'] text-(--c-ink2)">{label}</span>
-    </label>
-  )
-}
 
 export default function DaysView({ rows }) {
   const [metric, setMetric] = useState('shots')
@@ -40,7 +25,7 @@ export default function DaysView({ rows }) {
   const chartData = useMemo(() => takesPerDay(localRows), [localRows])
 
   const btnBase = "px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors"
-  const btnActive = 'bg-[#e63946] text-white border-[#e63946]'
+  const btnActive = 'bg-(--c-accent) text-white border-(--c-accent)'
   const btnInactive = 'bg-transparent text-(--c-nav-fg) border-(--c-border) hover:text-(--c-nav-fg-hover) hover:border-(--c-border-strong)'
 
   return (

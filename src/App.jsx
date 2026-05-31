@@ -41,6 +41,10 @@ export default function App() {
     try {
       const raw = await parseCSV(file)
       const processed = processData(raw)
+      if (!processed.some((r) => r._scene)) {
+        setError("This doesn't look like a camera log CSV file.")
+        return
+      }
       setRows(processed)
       setProjectTitle(titleFromFilename(file.name))
     } catch (e) {

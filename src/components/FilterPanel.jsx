@@ -1,28 +1,12 @@
 import { useTheme } from '../ThemeContext.jsx'
 
-function Toggle({ label, checked, onChange }) {
-  return (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`relative w-9 h-5 rounded-full transition-colors duration-150 ${checked ? 'bg-[#e63946]' : 'bg-(--c-bar-track)'}`}
-      >
-        <div
-          className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform duration-150 shadow-sm bg-white ${checked ? 'translate-x-4' : 'translate-x-0.5'}`}
-        />
-      </div>
-      <span className="text-sm font-['DM_Sans'] text-(--c-ink2)">{label}</span>
-    </label>
-  )
-}
-
 export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [] }) {
   useTheme() // subscribe so filter panel re-renders on theme change
   const { cameras, dateRange } = filters
 
   const labelClass = `text-xs uppercase tracking-widest font-['DM_Mono'] mb-2 text-(--c-label)`
   const btnBase = `px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors`
-  const btnActive = 'bg-[#e63946] text-white border-transparent'
+  const btnActive = 'bg-(--c-accent) text-white border-transparent'
   const btnInactive = 'bg-transparent text-(--c-nav-fg) border-(--c-border) hover:text-(--c-nav-fg-hover) hover:border-(--c-border-strong)'
   const inputClass = 'w-full border border-(--c-border) rounded-lg px-2 py-1.5 text-xs font-["DM_Mono"] bg-(--c-surface) text-(--c-ink) focus:outline-none focus:border-(--c-border-strong)'
 

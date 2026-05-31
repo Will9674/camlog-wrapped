@@ -23,7 +23,7 @@ export default function UploadScreen({ onFile, loading }) {
       {/* Header bar */}
       <header className="bg-(--c-surface) border-b border-(--c-border) px-8 sm:px-12 h-14 flex items-center justify-between">
         <span className="font-['DM_Mono'] text-base font-bold text-(--c-ink) tracking-tight">
-          Cam<span className="text-[#e63946]">Log</span><span className="text-(--c-ink3)"> Wrapped</span>
+          Cam<span className="text-(--c-accent)">Log</span><span className="text-(--c-ink3)"> Wrapped</span>
         </span>
         <ThemeToggleButton />
       </header>
@@ -49,8 +49,8 @@ export default function UploadScreen({ onFile, loading }) {
             className={`
               border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all
               ${dragging
-                ? 'border-[#e63946] bg-[#e63946]/5'
-                : 'hover:border-[#e63946]/50'
+                ? 'border-(--c-accent) bg-(--c-accent)/5'
+                : 'hover:border-(--c-accent)/50'
               }
               ${loading ? 'pointer-events-none opacity-60' : ''}
             `}
@@ -61,7 +61,7 @@ export default function UploadScreen({ onFile, loading }) {
           >
             {loading ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-5 h-5 border-2 border-[#e63946] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-(--c-accent) border-t-transparent rounded-full animate-spin" />
                 <span className="text-sm font-['DM_Mono'] text-(--c-ink2)">Parsing…</span>
               </div>
             ) : (

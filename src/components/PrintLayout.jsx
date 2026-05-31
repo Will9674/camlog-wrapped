@@ -1,6 +1,7 @@
 import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
 import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots, getCameraColorByIndex } from '../utils/stats'
+import { fmtDate } from '../utils/format'
 
 const CHART_WIDTH = 652
 
@@ -207,11 +208,13 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
         <StatCard label="Avg Shots / Day" value={stats.avgShotsPerDay} />
       </StatRow>
       {(stats.dateFirst || stats.busiestDay) && (() => {
-        const fmtD = (d) => { if (!d) return ''; const [y,m,day] = d.split('-'); const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return { label: `${mo[parseInt(m)-1]} ${parseInt(day)}`, year: y } }
-        const a = fmtD(stats.dateFirst), b = fmtD(stats.dateLast)
-        const dateRange = (a && b) ? (a.year === b.year ? `${a.label} – ${b.label}, ${a.year}` : `${a.label}, ${a.year} – ${b.label}, ${b.year}`) : null
+        const a = stats.dateFirst ? fmtDate(stats.dateFirst) : null
+        const b = stats.dateLast ? fmtDate(stats.dateLast) : null
+        const dateRange = (a && b)
+          ? (a.year === b.year ? `${a.label} – ${b.label}, ${a.year}` : `${a.label}, ${a.year} – ${b.label}, ${b.year}`)
+          : null
         const bd = stats.busiestDay
-        const busiestStr = bd ? `${fmtD(bd.date).label} · ${bd.count} ${bd.count === 1 ? 'Shot' : 'Shots'}` : null
+        const busiestStr = bd ? `${fmtDate(bd.date).label} · ${bd.count} ${bd.count === 1 ? 'Shot' : 'Shots'}` : null
         return (
           <StatRow>
             {dateRange && <StatCard label="Date Range" value={dateRange} small />}

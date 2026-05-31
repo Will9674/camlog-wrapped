@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import UploadScreen from './components/UploadScreen'
 import Dashboard from './components/Dashboard'
 import { parseCSV, processData } from './utils/parseCSV'
@@ -8,6 +8,24 @@ export default function App() {
   const [projectTitle, setProjectTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Load shared data from URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash
+    if (!hash.startsWith('#s=')) return
+    const compressed = hash.slice(3)
+    import('lz-string').then(({ decompressFromEncodedURIComponent }) => {
+      try {
+        const data = JSON.parse(decompressFromEncodedURIComponent(compressed))
+        if (data?.rows && Array.isArray(data.rows)) {
+          setRows(data.rows)
+          setProjectTitle(data.projectTitle || '')
+        }
+      } catch {
+        // Malformed hash — fall through to upload screen
+      }
+    })
+  }, [])
 
   function titleFromFilename(name) {
     return name
@@ -19,6 +37,7 @@ export default function App() {
   async function handleFile(file) {
     setLoading(true)
     setError(null)
+    window.location.hash = ''
     try {
       const raw = await parseCSV(file)
       const processed = processData(raw)
@@ -32,8 +51,14 @@ export default function App() {
     }
   }
 
+  function handleReset() {
+    setRows(null)
+    setProjectTitle('')
+    window.location.hash = ''
+  }
+
   if (rows) {
-    return <Dashboard rows={rows} projectTitle={projectTitle} onReset={() => { setRows(null); setProjectTitle('') }} />
+    return <Dashboard rows={rows} projectTitle={projectTitle} onReset={handleReset} />
   }
 
   return (

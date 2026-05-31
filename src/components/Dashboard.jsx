@@ -89,9 +89,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
 
       let shareUrl = longUrl
       try {
-        const res = await fetch(
-          `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`
-        )
+        const res = await fetch(`/api/shorten?url=${encodeURIComponent(longUrl)}`)
         if (res.ok) {
           const short = (await res.text()).trim()
           if (short.startsWith('https://tinyurl.com/')) shareUrl = short

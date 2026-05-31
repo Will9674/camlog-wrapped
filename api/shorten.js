@@ -1,5 +1,14 @@
 export default async function handler(req, res) {
-  const { url } = req.query
+  if (req.method !== 'POST') return res.status(405).end()
+
+  let url
+  try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+    url = body?.url
+  } catch {
+    return res.status(400).end()
+  }
+
   if (!url) return res.status(400).end()
 
   try {

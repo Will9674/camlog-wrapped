@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import FilterPanel from './FilterPanel'
 import PrintLayout from './PrintLayout'
 import LensView from '../views/LensView'
@@ -21,29 +21,13 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   const [activeView, setActiveView] = useState('lens')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [exported, setExported] = useState(false)
   const printRef = useRef(null)
-  const shareRef = useRef(null)
-
-  // Close share popover on outside click
-  useEffect(() => {
-    if (!shareOpen) return
-    function handleClick(e) {
-      if (shareRef.current && !shareRef.current.contains(e.target)) {
-        setShareOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [shareOpen])
 
   async function handleExport() {
     const el = printRef.current
     if (!el || exporting) return
     setExporting(true)
-    setShareOpen(false)
     el.style.position = 'fixed'
     el.style.left = '0'
     el.style.top = '0'
@@ -74,38 +58,6 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       setExporting(false)
       setExported(true)
       setTimeout(() => setExported(false), 2500)
-    }
-  }
-
-  async function handleCopyLink() {
-    try {
-      const { compressToEncodedURIComponent } = await import('lz-string')
-      const payload = JSON.stringify({ projectTitle, rows })
-      const compressed = compressToEncodedURIComponent(payload)
-      const canonicalOrigin = window.location.hostname === 'localhost'
-        ? window.location.origin
-        : 'https://camlog-wrapped.vercel.app'
-      const longUrl = `${canonicalOrigin}/#s=${compressed}`
-
-      let shareUrl = longUrl
-      try {
-        const res = await fetch(
-          `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`
-        )
-        if (res.ok) {
-          const short = (await res.text()).trim()
-          if (short.startsWith('https://tinyurl.com/')) shareUrl = short
-        }
-      } catch {
-        // network unavailable — fall back to long URL
-      }
-
-      await navigator.clipboard.writeText(shareUrl)
-      setCopied(true)
-      setShareOpen(false)
-      setTimeout(() => setCopied(false), 2500)
-    } catch {
-      // clipboard write failed — silently ignore
     }
   }
 
@@ -188,67 +140,33 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           </button>
           <ThemeToggleButton />
 
-          {/* Share button + popover */}
-          <div ref={shareRef} className="relative">
-            <button
-              onClick={() => !exporting && setShareOpen((s) => !s)}
-              disabled={exporting}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                copied || exported
-                  ? 'text-[#e63946] bg-[#e63946]/10'
-                  : exporting
-                  ? 'text-[#e63946] bg-[#e63946]/10 cursor-default'
-                  : 'text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg)'
-              }`}
-              aria-label="Share"
-            >
-              {exporting ? (
-                <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
-              ) : copied || exported ? (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              ) : (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                  <polyline points="16 6 12 2 8 6"/>
-                  <line x1="12" y1="2" x2="12" y2="15"/>
-                </svg>
-              )}
-            </button>
-
-            {shareOpen && (
-              <div className="absolute right-0 top-10 bg-(--c-surface) border border-(--c-border) rounded-xl shadow-lg overflow-hidden z-50 min-w-[168px]">
-                <button
-                  onClick={handleCopyLink}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-sm font-['DM_Mono'] text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                  </svg>
-                  Copy Link
-                </button>
-                <div className="h-px bg-(--c-border)" />
-                <button
-                  onClick={handleExport}
-                  disabled={exporting}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-sm font-['DM_Mono'] text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors disabled:opacity-50"
-                >
-                  {exporting ? (
-                    <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7 10 12 15 17 10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                  )}
-                  {exporting ? 'Exporting…' : 'Export PDF'}
-                </button>
-              </div>
+          {/* Export PDF button */}
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+              exported
+                ? 'text-[#e63946] bg-[#e63946]/10'
+                : exporting
+                ? 'text-[#e63946] bg-[#e63946]/10 cursor-default'
+                : 'text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg)'
+            }`}
+            aria-label="Export PDF"
+          >
+            {exporting ? (
+              <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+            ) : exported ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
             )}
-          </div>
+          </button>
 
           <button
             onClick={onReset}

@@ -90,11 +90,11 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       let shareUrl = longUrl
       try {
         const res = await fetch(
-          `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`
+          `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`
         )
         if (res.ok) {
           const short = (await res.text()).trim()
-          if (short.startsWith('https://is.gd/')) shareUrl = short
+          if (short.startsWith('https://tinyurl.com/')) shareUrl = short
         }
       } catch {
         // network unavailable — fall back to long URL

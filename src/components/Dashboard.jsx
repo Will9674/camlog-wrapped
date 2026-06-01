@@ -38,7 +38,8 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       await new Promise((r) => setTimeout(r, 400))
 
       const { toPng } = await import('html-to-image')
-      const exportOpts = { pixelRatio: 6, backgroundColor: '#f0ece4' }
+      const isMobile = window.innerWidth < 640
+      const exportOpts = { pixelRatio: isMobile ? 3 : 6, backgroundColor: '#f0ece4' }
       await toPng(el, exportOpts)
       const dataUrl = await toPng(el, exportOpts)
 
@@ -239,6 +240,9 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       </div>
     </div>
     <PrintLayout ref={printRef} rows={filteredRows} stats={stats} projectTitle={projectTitle} />
+    {exporting && (
+      <div className="fixed inset-0 z-[10000] bg-(--c-bg)/80" />
+    )}
     </>
   )
 }

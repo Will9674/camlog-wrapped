@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import FilterPanel from './FilterPanel'
 import PrintLayout from './PrintLayout'
 import LensView from '../views/LensView'
@@ -19,6 +19,9 @@ const VIEWS = [
 
 export default function Dashboard({ rows, projectTitle, onReset }) {
   const [activeView, setActiveView] = useState('lens')
+  const activeTabRef = useCallback((el) => {
+    if (el) el.scrollIntoView({ inline: 'nearest', behavior: 'smooth' })
+  }, [activeView])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exported, setExported] = useState(false)
@@ -222,6 +225,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
               {VIEWS.map((v) => (
                 <button
                   key={v.id}
+                  ref={activeView === v.id ? activeTabRef : null}
                   onClick={() => setActiveView(v.id)}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-['DM_Mono'] transition-colors ${
                     activeView === v.id

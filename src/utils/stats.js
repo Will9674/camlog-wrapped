@@ -215,7 +215,7 @@ function normalizeFilter(raw) {
   const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*([a-z]+(?:\/[a-z]+)?)?$/i)
   if (ndMatch) return formatND(ndMatch[1], ndMatch[2] || '')
 
-  if (/^nd$/i.test(s)) return null
+  if (/^nd$/i.test(s)) return 'ND'
 
   // Split Diopter: "Split DIO 2", "Split Diopter 1/2" → "Split Diopter +2", "Split Diopter +1/2"
   const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
@@ -227,7 +227,7 @@ function normalizeFilter(raw) {
   // Fallback for any separator that survived pre-processing (e.g. unusual dash variants)
   const dioSepMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)\s*[^\d\w\s.]\s*(\d+)$/i)
   if (dioSepMatch) return `Diopter +${dioSepMatch[1]}/${dioSepMatch[2]}`
-  if (/^(?:dio(?:pter)?)$/i.test(s)) return null
+  if (/^(?:dio(?:pter)?)$/i.test(s)) return 'Diopter'
 
   // Polarizer
   if (/^pola(?:ri[sz]er)?$/i.test(s)) return 'Pola'
@@ -237,10 +237,6 @@ function normalizeFilter(raw) {
 
   // Bare fraction with no filter name → skip
   if (/^\d+[^\d\w\s.]\d+$/.test(s)) return null
-
-  // Bare filter name with no number → skip
-  // Exception: "clear" variants (e.g. "Clear (Nose Grease)") are valid without a number
-  if (!/\d/.test(s) && !/\bclear\b/i.test(s)) return null
 
   // Clear variants with extra info → title case (not uppercase) for readability
   // Normalize missing space before parenthesis: "CLEAR(NOSE GREASE)" → "Clear (Nose Grease)"

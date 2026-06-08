@@ -1,12 +1,20 @@
 import { useRef, useState } from 'react'
 import { ThemeToggleButton } from '../ThemeContext.jsx'
 
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function UploadScreen({ onFile, loading }) {
   const inputRef = useRef()
   const [dragging, setDragging] = useState(false)
+  const [fileInfo, setFileInfo] = useState(null)
 
   function handleFile(file) {
     if (file && file.name.endsWith('.csv')) {
+      setFileInfo({ name: file.name, size: file.size })
       onFile(file)
     }
   }
@@ -63,6 +71,15 @@ export default function UploadScreen({ onFile, loading }) {
               <div className="flex flex-col items-center gap-3">
                 <div className="w-5 h-5 border-2 border-(--c-accent) border-t-transparent rounded-full animate-spin" />
                 <span className="text-sm font-['DM_Mono'] text-(--c-ink2)">Parsing…</span>
+                {fileInfo && (
+                  <div className="text-xs font-['DM_Mono'] text-(--c-ink3) text-center space-y-0.5">
+                    <div className="truncate max-w-[16rem]">{fileInfo.name}</div>
+                    <div>
+                      {formatSize(fileInfo.size)}
+                      {fileInfo.size > 500_000 && ' — large file, hang tight'}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">

@@ -47,9 +47,6 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
     ...d,
     displayValue: showPct ? parseFloat(d[valueKey].toFixed(1)) : d[valueKey],
     label: labelFormatter ? labelFormatter(d.name) : d.name,
-    barLabel: showPct
-      ? `${parseFloat(d[valueKey].toFixed(1))}% · ${d.count}`
-      : `${d[valueKey]}`,
     barLabelFull: showPct
       ? `${parseFloat(d[valueKey].toFixed(1))}%  ·  ${pl(d.count, countLabel)}`
       : pl(d.count, countLabel),

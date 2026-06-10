@@ -50,13 +50,27 @@ export function parseSupportType(notes, description = '') {
 
 export function formatDate(dateStr) {
   if (!dateStr) return null
-  // Dates may come as M/D/YYYY or YYYY-MM-DD
-  const parts = dateStr.split('/')
+  const s = String(dateStr).trim()
+  // Already ISO (YYYY-MM-DD…) — take the date portion
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
+  // M/D/YYYY or M/D/YY
+  const parts = s.split('/')
   if (parts.length === 3) {
-    const [m, d, y] = parts
+    let [m, d, y] = parts
+    if (y.length === 2) y = '20' + y
     return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
   }
-  return dateStr
+  // Textual formats like "Jun 7" or "Jun 7, 2026" (older CamLog exports).
+  // Date.parse infers the year for bare "Mon D" — not perfect for multi-year
+  // shoots, but yields a sortable YYYY-MM-DD instead of a lexical string.
+  const parsed = new Date(s)
+  if (!isNaN(parsed.getTime())) {
+    const y  = parsed.getFullYear()
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0')
+    const dd = String(parsed.getDate()).padStart(2, '0')
+    return `${y}-${mm}-${dd}`
+  }
+  return s
 }
 
 export function processData(rawRows) {

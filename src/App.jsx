@@ -9,24 +9,6 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Load shared data from URL hash on mount
-  useEffect(() => {
-    const hash = window.location.hash
-    if (!hash.startsWith('#s=')) return
-    const compressed = hash.slice(3)
-    import('lz-string').then(({ decompressFromEncodedURIComponent }) => {
-      try {
-        const data = JSON.parse(decompressFromEncodedURIComponent(compressed))
-        if (data?.rows && Array.isArray(data.rows)) {
-          setRows(data.rows)
-          setProjectTitle(data.projectTitle || '')
-        }
-      } catch {
-        // Malformed hash — fall through to upload screen
-      }
-    })
-  }, [])
-
   function titleFromFilename(name) {
     return name
       .replace(/\.csv$/i, '')

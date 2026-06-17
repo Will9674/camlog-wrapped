@@ -131,7 +131,13 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       {/* Top bar */}
       <header className="relative bg-(--c-surface) border-b border-(--c-border) px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
         <span className="hidden sm:block font-['DM_Mono'] text-base font-bold text-(--c-ink) tracking-tight">
-          Cam<span className="text-(--c-accent)">Log</span><span className="text-(--c-ink3)"> Wrapped</span>
+          Cam<span className="text-(--c-accent)">Log</span>{' '}
+          <span style={{
+            background: 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>Wrapped</span>
         </span>
         {projectTitle && (
           <span className="flex-1 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-(--c-ink) tracking-tight">

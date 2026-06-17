@@ -1,6 +1,13 @@
 import { useRef, useState } from 'react'
 import { ThemeToggleButton } from '../ThemeContext.jsx'
 
+const wrappedTextStyle = {
+  background: 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+}
+
 export default function UploadScreen({ onFile, loading }) {
   const inputRef = useRef()
   const [dragging, setDragging] = useState(false)
@@ -19,28 +26,23 @@ export default function UploadScreen({ onFile, loading }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-(--c-bg)">
-      {/* Header bar */}
-      <header className="bg-(--c-surface) border-b border-(--c-border) px-8 sm:px-12 h-14 flex items-center justify-between">
-        <span className="font-['DM_Mono'] text-base font-bold text-(--c-ink) tracking-tight">
-          Cam<span className="text-(--c-accent)">Log</span><span className="text-(--c-ink3)"> Wrapped</span>
-        </span>
+    <div className="min-h-screen flex flex-col bg-(--c-bg) relative">
+      <div className="absolute top-4 right-6">
         <ThemeToggleButton />
-      </header>
+      </div>
 
-      {/* Centered content */}
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
-          <div className="mb-8">
-            <h1 className="text-xl font-['DM_Mono'] font-medium tracking-tight text-(--c-ink)">
-              Your production, wrapped.
+          <div className="mb-10 text-center">
+            <h1 className="font-['DM_Mono'] font-bold tracking-tight text-(--c-ink) leading-tight text-4xl sm:text-5xl mb-4">
+              Cam<span className="text-(--c-accent)">Log</span>{' '}
+              <span style={wrappedTextStyle}>Wrapped</span>
             </h1>
-            <p className="mt-1.5 text-sm text-(--c-ink2) font-['DM_Sans']">
-              Import a camera log CSV export.
+            <p className="text-sm text-(--c-ink2) font-['DM_Sans']">
+              Your production, wrapped.
             </p>
           </div>
 
-          {/* Drop zone */}
           <div
             onClick={() => !loading && inputRef.current.click()}
             onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
@@ -61,7 +63,7 @@ export default function UploadScreen({ onFile, loading }) {
           >
             <div className="flex flex-col items-center gap-3">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-(--c-ink3)">
-                <path d="M14 2H6a2 2 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="12" y1="18" x2="12" y2="12"/>
                 <line x1="9" y1="15" x2="15" y2="15"/>
@@ -79,7 +81,6 @@ export default function UploadScreen({ onFile, loading }) {
             className="hidden"
             onChange={(e) => handleFile(e.target.files[0])}
           />
-
         </div>
       </div>
     </div>

@@ -28,15 +28,15 @@ function CameraPrintChart({ data }) {
 
 const s = {
   mono: { fontFamily: 'DM Mono, monospace' },
-  label: { fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#6b6762', marginBottom: 4, fontFamily: 'DM Mono, monospace' },
-  sectionHeading: { fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#a09e99', marginBottom: 14, fontFamily: 'DM Mono, monospace' },
+  label: { fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#6b6762', marginBottom: 5, fontFamily: 'DM Mono, monospace' },
+  sectionHeading: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#6b6762', marginBottom: 14, fontFamily: 'DM Mono, monospace' },
 }
 
 function StatCard({ label, value, small = false }) {
   return (
     <div style={{ flex: 1, background: 'white', border: '1px solid #e8e3da', borderRadius: 10, padding: '12px 16px' }}>
       <div style={s.label}>{label}</div>
-      <div style={{ fontSize: small ? 14 : 22, fontWeight: 600, color: '#1a1916', lineHeight: 1.3, ...s.mono }}>{value}</div>
+      <div style={{ fontSize: small ? 16 : 30, fontWeight: 600, color: '#1a1916', lineHeight: 1.2, ...s.mono }}>{value}</div>
     </div>
   )
 }
@@ -169,9 +169,6 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
 
-  const shotsDays = new Set(shotsRows.map((r) => r._date).filter(Boolean)).size
-  const shotsAvg  = shotsDays > 0 ? (shotsRows.length / shotsDays).toFixed(1) : 0
-
   return (
     <div
       ref={ref}
@@ -190,13 +187,18 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
       {/* Force recharts SVG to not clip label text outside plot area */}
       <style>{`.print-layout svg { overflow: visible !important; }`}</style>
       {/* Header */}
-      <div style={{ marginBottom: 28, paddingBottom: 16, borderBottom: '1px solid #d8d2c8' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.025em', ...s.mono, marginBottom: 6 }}>
+      <div style={{ marginBottom: 28, paddingBottom: 18, borderBottom: '1px solid #d8d2c8' }}>
+        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.025em', ...s.mono, marginBottom: 8 }}>
           <span style={{ color: '#1a1916' }}>Cam</span>
           <span style={{ color: '#e63946' }}>Log</span>
-          <span style={{ color: '#a09e99' }}> Wrapped</span>
+          <span style={{
+            background: 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}> Wrapped</span>
         </div>
-        <div style={{ fontSize: 24, fontWeight: 600, color: '#1a1916', letterSpacing: '0.06em', textTransform: 'uppercase', ...s.mono }}>
+        <div style={{ fontSize: 26, fontWeight: 600, color: '#1a1916', letterSpacing: '0.06em', textTransform: 'uppercase', ...s.mono }}>
           {projectTitle}
         </div>
       </div>
@@ -261,11 +263,6 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
 
       {/* Per Day Data */}
       <SectionCard title="Shots Per Day">
-        <StatRow>
-          <StatCard label="Total Shots" value={shotsRows.length} />
-          <StatCard label="Shooting Days" value={shotsDays} />
-          <StatCard label="Avg Shots / Day" value={shotsAvg} />
-        </StatRow>
         <VertPrintChart data={perDayData} />
       </SectionCard>
     </div>

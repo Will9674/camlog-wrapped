@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import FilterPanel from './FilterPanel'
 import PrintLayout from './PrintLayout'
 import LensView from '../views/LensView'
@@ -76,6 +76,10 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     cameras: ['All'],
     dateRange: [dateMin, dateMax],
   })
+
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, dateRange: [dateMin, dateMax] }))
+  }, [dateMin, dateMax])
 
   const filteredRows = useMemo(() => filterRows(rows, filters), [rows, filters])
   const stats = useMemo(() => summaryStats(rows, filters), [rows, filters])

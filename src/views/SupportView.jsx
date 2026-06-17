@@ -18,7 +18,7 @@ export default function SupportView({ rows, stats }) {
         </h2>
         {data.length === 0 ? (
           <div className="text-(--c-ink2) font-['DM_Mono'] text-sm py-8 text-center">
-            No support data found in Notes field
+            No support data recorded
           </div>
         ) : (
           <>

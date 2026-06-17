@@ -59,29 +59,17 @@ export default function UploadScreen({ onFile, loading }) {
               backgroundColor: dragging ? undefined : 'var(--c-dropzone-bg)',
             }}
           >
-            {loading ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-5 h-5 border-2 border-(--c-accent) border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm font-['DM_Mono'] text-(--c-ink2)">Parsing…</span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-(--c-ink3)">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="12" y1="18" x2="12" y2="12"/>
-                  <line x1="9" y1="15" x2="15" y2="15"/>
-                </svg>
-                <div>
-                  <p className="text-(--c-ink) text-sm font-['DM_Sans'] font-medium">
-                    Attach your CSV here
-                  </p>
-                  <p className="text-(--c-ink2) text-xs font-['DM_Sans'] mt-1">
-                    or click to browse
-                  </p>
-                </div>
-              </div>
-            )}
+            <div className="flex flex-col items-center gap-3">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-(--c-ink3)">
+                <path d="M14 2H6a2 2 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              <p className="text-(--c-ink) text-sm font-['DM_Sans'] font-medium">
+                Attach CSV here
+              </p>
+            </div>
           </div>
 
           <input
@@ -92,9 +80,6 @@ export default function UploadScreen({ onFile, loading }) {
             onChange={(e) => handleFile(e.target.files[0])}
           />
 
-          <p className="text-xs text-(--c-ink3) font-['DM_Mono'] mt-5">
-            All processing happens in your browser — no data is uploaded.
-          </p>
         </div>
       </div>
     </div>

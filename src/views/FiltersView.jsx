@@ -14,7 +14,7 @@ export default function FiltersView({ rows, stats }) {
         </h2>
         {data.length === 0 ? (
           <div className="text-(--c-ink2) font-['DM_Mono'] text-sm py-8 text-center">
-            No filter data found in this export
+            No filter data recorded
           </div>
         ) : (
           <HorizBarChart data={data} valueKey="pct" showPct countLabel="Shots" />

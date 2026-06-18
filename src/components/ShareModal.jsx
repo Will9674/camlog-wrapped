@@ -28,7 +28,14 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    const handler = () => setVpH(vv.height)
+    let prevW = vv.width
+    // Only update vpH on orientation change (width changes), not address-bar scroll (height-only)
+    const handler = () => {
+      if (vv.width !== prevW) {
+        prevW = vv.width
+        setVpH(vv.height)
+      }
+    }
     vv.addEventListener('resize', handler)
     return () => vv.removeEventListener('resize', handler)
   }, [])

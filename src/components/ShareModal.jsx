@@ -22,38 +22,40 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
   const [exporting, setExporting]     = useState(false)
   const [exported, setExported]       = useState(false)
   const [exportError, setExportError] = useState(false)
-  const [vpH, setVpH]                 = useState(() => window.visualViewport?.height ?? window.innerHeight)
-  const exportRef = useRef(null)
-
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    let prevW = vv.width
-    // Only update vpH on orientation change (width changes), not address-bar scroll (height-only)
-    const handler = () => {
-      if (vv.width !== prevW) {
-        prevW = vv.width
-        setVpH(vv.height)
-      }
-    }
-    vv.addEventListener('resize', handler)
-    return () => vv.removeEventListener('resize', handler)
-  }, [])
+  // previewScale is derived from ResizeObserver on the flex-1 container,
+  // so CSS layout (not JS viewport math) determines how big the preview is.
+  const [previewScale, setPreviewScale] = useState(PREVIEW_W / CARD_SIZE)
+  const previewAreaRef = useRef(null)
+  const exportRef      = useRef(null)
 
   const portrait   = format === 'story'
   const cardH      = portrait ? CARD_HEIGHT_STORY : CARD_SIZE
   const pixelRatio = portrait ? (1080 / CARD_SIZE) : 3
 
-  // In portrait mode, shrink preview so all UI fits within 90vh without scrolling.
-  // Reserved: header ~56px, format picker ~52px, view picker ~56px, save ~72px, gaps ~36px = ~272px
-  // header ~57 + format ~60 + preview-padding ~16 + view-picker ~44 + save ~73 = ~250px
-  const RESERVED_H = 250
-  const maxPortraitPreviewH = vpH * 0.9 - RESERVED_H
-  const effectivePreviewW = portrait
-    ? Math.min(PREVIEW_W, Math.max(160, Math.round(maxPortraitPreviewH * CARD_SIZE / CARD_HEIGHT_STORY)))
-    : PREVIEW_W
-  const previewH = Math.round(effectivePreviewW * (cardH / CARD_SIZE))
-  const scale    = effectivePreviewW / CARD_SIZE
+  // Measure the flex-1 preview area and compute scale to fill it.
+  // Only update on the first measure or when width changes (orientation change).
+  // Address-bar scroll changes height only — we ignore those to keep the preview stable.
+  useEffect(() => {
+    const el = previewAreaRef.current
+    if (!el) return
+    let prevW = -1
+
+    const obs = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      if (width === prevW) return   // height-only change (address bar) — ignore
+      prevW = width
+
+      const scaleW = Math.min(width, PREVIEW_W) / CARD_SIZE
+      const scaleH = portrait ? height / CARD_HEIGHT_STORY : height / CARD_SIZE
+      setPreviewScale(Math.min(scaleW, scaleH))
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [portrait])
+
+  const scale          = previewScale
+  const effectivePreviewW = Math.round(scale * CARD_SIZE)
+  const previewH          = Math.round(scale * cardH)
 
   async function handleExport() {
     const el = exportRef.current
@@ -98,7 +100,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
       {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
 
-      {/* Modal */}
+      {/* Modal — flex column, capped at 90dvh so it never overflows the visible screen */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
         <div className="bg-(--c-surface) border border-(--c-border) rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto flex flex-col max-h-[90dvh]">
 
@@ -131,8 +133,12 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
             </div>
           </div>
 
-          {/* Preview */}
-          <div className="flex justify-center pb-4 px-6 flex-shrink-0">
+          {/* Preview area — flex-1 fills all remaining space between chrome elements.
+              ResizeObserver measures this container and scales the card to fill it. */}
+          <div
+            ref={previewAreaRef}
+            className="flex-1 min-h-0 flex justify-center items-start px-6 pb-4 overflow-hidden"
+          >
             <div style={{ width: effectivePreviewW, height: previewH, overflow: 'hidden', borderRadius: 10, flexShrink: 0 }}>
               <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: CARD_SIZE, height: cardH }}>
                 <ShareCardContent
@@ -146,7 +152,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
             </div>
           </div>
 
-          {/* View picker — always visible, outside scroll */}
+          {/* View picker — always visible */}
           <div className="px-6 pb-3 flex-shrink-0">
             <div className="flex flex-wrap gap-1.5">
               {VIEWS.map((v) => (

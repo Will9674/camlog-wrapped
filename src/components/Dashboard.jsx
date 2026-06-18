@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import FilterPanel from './FilterPanel'
 import PrintLayout from './PrintLayout'
+import ShareModal from './ShareModal'
 import LensView from '../views/LensView'
 import SupportView from '../views/SupportView'
 import DaysView from '../views/DaysView'
@@ -23,6 +24,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     if (el) el.scrollIntoView({ inline: 'nearest', behavior: 'smooth' })
   }, [activeView])
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exported, setExported] = useState(false)
   const [exportError, setExportError] = useState(false)
@@ -158,6 +160,19 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           </button>
           <ThemeToggleButton />
 
+          {/* Share as image button */}
+          <button
+            onClick={() => setShareOpen(true)}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors"
+            aria-label="Share as image"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18"/>
+              <path d="M9 21V9"/>
+            </svg>
+          </button>
+
           {/* Export PDF button */}
           <button
             onClick={handleExport}
@@ -254,6 +269,14 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       </div>
     </div>
     <PrintLayout ref={printRef} rows={filteredRows} stats={stats} projectTitle={projectTitle} />
+    {shareOpen && (
+      <ShareModal
+        rows={filteredRows}
+        stats={stats}
+        projectTitle={projectTitle}
+        onClose={() => setShareOpen(false)}
+      />
+    )}
     {exporting && (
       <div className="fixed inset-0 z-[10000] bg-(--c-bg)/80" />
     )}

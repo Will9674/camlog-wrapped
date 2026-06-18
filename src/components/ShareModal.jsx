@@ -22,13 +22,15 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
   const [exporting, setExporting]     = useState(false)
   const [exported, setExported]       = useState(false)
   const [exportError, setExportError] = useState(false)
-  const [vpH, setVpH]                 = useState(() => window.innerHeight)
+  const [vpH, setVpH]                 = useState(() => window.visualViewport?.height ?? window.innerHeight)
   const exportRef = useRef(null)
 
   useEffect(() => {
-    const handler = () => setVpH(window.innerHeight)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    const vv = window.visualViewport
+    if (!vv) return
+    const handler = () => setVpH(vv.height)
+    vv.addEventListener('resize', handler)
+    return () => vv.removeEventListener('resize', handler)
   }, [])
 
   const portrait   = format === 'story'
@@ -37,7 +39,8 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
 
   // In portrait mode, shrink preview so all UI fits within 90vh without scrolling.
   // Reserved: header ~56px, format picker ~52px, view picker ~56px, save ~72px, gaps ~36px = ~272px
-  const RESERVED_H = 272
+  // header ~57 + format ~60 + preview-padding ~16 + view-picker ~44 + save ~73 = ~250px
+  const RESERVED_H = 250
   const maxPortraitPreviewH = vpH * 0.9 - RESERVED_H
   const effectivePreviewW = portrait
     ? Math.min(PREVIEW_W, Math.max(160, Math.round(maxPortraitPreviewH * CARD_SIZE / CARD_HEIGHT_STORY)))
@@ -90,7 +93,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
-        <div className="bg-(--c-surface) border border-(--c-border) rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto flex flex-col max-h-[90vh]">
+        <div className="bg-(--c-surface) border border-(--c-border) rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto flex flex-col max-h-[90dvh]">
 
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-(--c-border) flex-shrink-0">

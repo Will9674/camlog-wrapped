@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { ShareCardContent, CARD_SIZE, CARD_HEIGHT_STORY } from './ShareCard'
+import { ShareCardContent } from './ShareCard'
+import { CARD_SIZE, CARD_HEIGHT_STORY } from './shareCardSize'
 
 const PREVIEW_W = 320
 

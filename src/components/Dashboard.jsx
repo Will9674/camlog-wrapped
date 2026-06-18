@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import FilterPanel from './FilterPanel'
 import PrintLayout from './PrintLayout'
 import ShareModal from './ShareModal'
@@ -18,11 +18,50 @@ const VIEWS = [
   { id: 'filters', label: 'Optical Filters' },
 ]
 
+function NavButton({ view, activeView, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-['DM_Sans'] transition-colors ${
+        activeView === view.id
+          ? 'text-(--c-accent) bg-(--c-accent)/10'
+          : 'text-(--c-nav-fg) hover:text-(--c-nav-fg-hover) hover:bg-(--c-nav-hover-bg)'
+      }`}
+    >
+      {view.label}
+    </button>
+  )
+}
+
+function SidebarContents({ activeView, onNavClick, filters, onFiltersChange, dateMin, dateMax, availableCameras }) {
+  return (
+    <>
+      <div className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-2">
+        Views
+      </div>
+      {VIEWS.map((v) => (
+        <NavButton key={v.id} view={v} activeView={activeView} onClick={() => onNavClick(v.id)} />
+      ))}
+      <div className="mt-8">
+        <FilterPanel
+          filters={filters}
+          onChange={onFiltersChange}
+          dateMin={dateMin}
+          dateMax={dateMax}
+          availableCameras={availableCameras}
+        />
+      </div>
+    </>
+  )
+}
+
 export default function Dashboard({ rows, projectTitle, onReset }) {
   const [activeView, setActiveView] = useState('lens')
+  // Stable identity: React re-attaches this ref to whichever tab becomes active,
+  // firing the callback to scroll it into view.
   const activeTabRef = useCallback((el) => {
     if (el) el.scrollIntoView({ inline: 'nearest', behavior: 'smooth' })
-  }, [activeView])
+  }, [])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -74,14 +113,12 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
   const [dateMin, dateMax] = useMemo(() => getDateRange(rows), [rows])
   const availableCameras = useMemo(() => getCamerasInData(rows), [rows])
 
+  // Initialised once per mount; App remounts Dashboard (via key) on each new upload,
+  // so the date range always starts at the new data's full span.
   const [filters, setFilters] = useState({
     cameras: ['All'],
     dateRange: [dateMin, dateMax],
   })
-
-  useEffect(() => {
-    setFilters(prev => ({ ...prev, dateRange: [dateMin, dateMax] }))
-  }, [dateMin, dateMax])
 
   const filteredRows = useMemo(() => filterRows(rows, filters), [rows, filters])
   const stats = useMemo(() => summaryStats(rows, filters), [rows, filters])
@@ -94,38 +131,14 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     filters: FiltersView,
   }[activeView]
 
-  const NavButton = ({ view, onClick }) => (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-['DM_Sans'] transition-colors ${
-        activeView === view.id
-          ? 'text-(--c-accent) bg-(--c-accent)/10'
-          : 'text-(--c-nav-fg) hover:text-(--c-nav-fg-hover) hover:bg-(--c-nav-hover-bg)'
-      }`}
-    >
-      {view.label}
-    </button>
-  )
-
-  const SidebarContents = ({ onNavClick }) => (
-    <>
-      <div className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-2">
-        Views
-      </div>
-      {VIEWS.map((v) => (
-        <NavButton key={v.id} view={v} onClick={() => onNavClick(v.id)} />
-      ))}
-      <div className="mt-8">
-        <FilterPanel
-          filters={filters}
-          onChange={setFilters}
-          dateMin={dateMin}
-          dateMax={dateMax}
-          availableCameras={availableCameras}
-        />
-      </div>
-    </>
-  )
+  const sidebarProps = {
+    activeView,
+    filters,
+    onFiltersChange: setFilters,
+    dateMin,
+    dateMax,
+    availableCameras,
+  }
 
   return (
     <>
@@ -226,7 +239,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
         {/* Sidebar — desktop */}
         <aside className="hidden sm:flex flex-col w-72 bg-(--c-sidebar) border-r border-(--c-border) flex-shrink-0 overflow-y-auto">
           <nav className="px-14 pt-8 pb-8 flex-1">
-            <SidebarContents onNavClick={(id) => setActiveView(id)} />
+            <SidebarContents {...sidebarProps} onNavClick={(id) => setActiveView(id)} />
           </nav>
         </aside>
 
@@ -236,7 +249,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
             <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
             <div className="relative z-50 w-72 bg-(--c-sidebar) flex flex-col overflow-y-auto">
               <div className="px-8 pt-8 pb-8">
-                <SidebarContents onNavClick={(id) => { setActiveView(id); setSidebarOpen(false) }} />
+                <SidebarContents {...sidebarProps} onNavClick={(id) => { setActiveView(id); setSidebarOpen(false) }} />
               </div>
             </div>
           </div>

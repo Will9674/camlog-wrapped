@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import UploadScreen from './components/UploadScreen'
 import Dashboard from './components/Dashboard'
 import { parseCSV, processData } from './utils/parseCSV'
@@ -8,6 +8,9 @@ export default function App() {
   const [projectTitle, setProjectTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  // Bumped on every successful load so Dashboard remounts fresh for new data,
+  // giving it a correct initial date range without syncing state in an effect.
+  const [loadId, setLoadId] = useState(0)
 
   function titleFromFilename(name) {
     return name
@@ -29,6 +32,7 @@ export default function App() {
       }
       setRows(processed)
       setProjectTitle(titleFromFilename(file.name))
+      setLoadId((n) => n + 1)
     } catch (e) {
       setError('Failed to parse CSV. Please check the file format.')
       console.error(e)
@@ -44,7 +48,7 @@ export default function App() {
   }
 
   if (rows) {
-    return <Dashboard rows={rows} projectTitle={projectTitle} onReset={handleReset} />
+    return <Dashboard key={loadId} rows={rows} projectTitle={projectTitle} onReset={handleReset} />
   }
 
   return (

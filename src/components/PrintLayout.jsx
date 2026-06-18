@@ -17,7 +17,7 @@ function CameraPrintChart({ data }) {
       {data.map((cam, i) => (
         <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <div style={{ width: 10, height: 10, borderRadius: 2, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
-          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1a1916', flex: 1 }}>{cam.name}</span>
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1a1916', flex: 1 }}>{cam.name} CAMERA</span>
           <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6b6762' }}>{cam.pct.toFixed(1)}%</span>
           <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#a09e99', width: 80, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
         </div>
@@ -167,6 +167,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
   const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
   const camData    = useMemo(() => cameraUsage(rows), [rows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
+  const generatedOn = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 
 
   return (
@@ -265,6 +266,16 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
       <SectionCard title="Shots Per Day">
         <VertPrintChart data={perDayData} />
       </SectionCard>
+
+      {/* Footer */}
+      <div style={{ marginTop: 32, paddingTop: 14, borderTop: '1px solid #d8d2c8', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <span style={{ fontSize: 10, color: '#a09e99', fontFamily: 'DM Mono, monospace' }}>
+          Generated {generatedOn}
+        </span>
+        <span style={{ fontSize: 10, color: '#6b6762', letterSpacing: '0.06em', fontFamily: 'DM Mono, monospace' }}>
+          camlog.app
+        </span>
+      </div>
     </div>
   )
 })

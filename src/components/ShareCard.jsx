@@ -4,10 +4,9 @@ import {
   takesPerDay, deduplicateShots, getCameraColorByIndex,
 } from '../utils/stats'
 import { fmtDate } from '../utils/format'
+import { CARD_SIZE, CARD_HEIGHT_STORY } from './shareCardSize'
 
 const GRADIENT = 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)'
-export const CARD_SIZE = 600
-export const CARD_HEIGHT_STORY = Math.round(CARD_SIZE * 16 / 9)  // 1067
 // Extra top padding in portrait to clear the Instagram story handle/avatar overlay
 const STORY_TOP_PAD = 140
 
@@ -64,30 +63,50 @@ function CardFooter() {
 }
 
 // ── Dynamic font sizing ───────────────────────────────────────────────────────
-// Name is now the BIG hero number; pct is the supporting figure.
+// Name is the BIG hero figure; pct is the supporting figure.
+//
+// DM Mono is monospace with a measured advance width of exactly 0.60em (faux-bold
+// at weight 700 keeps the same advance), so a string's width is precisely
+// chars × fontSize × MONO_RATIO. That makes the fit math exact — no calibrated
+// tiers needed — and guarantees text scales down smoothly before it ever clips.
+const MONO_RATIO = 0.6
+const NAME_MIN = 36
 
-function nameFontSize(name, portrait) {
-  const len = (name || '').length
-  if (portrait) {
-    // Portrait inner width ≈ 504px. Each tier verified at ~0.605 char ratio.
-    if (len <= 4)  return 130
-    if (len <= 6)  return 108
-    if (len <= 9)  return 88
-    if (len <= 12) return 70
-    if (len <= 15) return 52
-    if (len <= 18) return 44
-    return 36
+// Largest size (capped at `cap`, floored at NAME_MIN) at which `len` monospace
+// chars fit within `width` px.
+function nameFontSize(len, width, cap) {
+  const ideal = Math.floor(width / (Math.max(len, 1) * MONO_RATIO))
+  return Math.max(NAME_MIN, Math.min(cap, ideal))
+}
+
+// How many monospace chars fit in `width` px at `size`.
+function fitChars(width, size) {
+  return Math.floor(width / (size * MONO_RATIO))
+}
+
+// Trailing lens focal length, e.g. "24-290mm", "32mm", "18-35mm".
+const FOCAL_RE = /\s*(\d+(?:[.\-x×]\d+)?\s*mm)$/i
+
+// Shortens a name to fit `maxChars`. For lens names it preserves the focal length
+// (the part that matters most) and trims the prefix instead of the tail:
+// "Angenieux Optimo 24-290mm" → "Angenieux… 24-290mm" rather than "Angenieux Opti…".
+// Non-lens names (e.g. filters) fall back to a plain trailing ellipsis.
+function fitName(name, maxChars) {
+  if (name.length <= maxChars) return name
+  const m = name.match(FOCAL_RE)
+  if (m) {
+    const focal = m[1].replace(/\s+/g, '')
+    const prefix = name.slice(0, m.index).trimEnd()
+    const room = maxChars - focal.length - 2   // prefix + "… "
+    if (room >= 2) {
+      let p = prefix.slice(0, room)
+      const sp = p.lastIndexOf(' ')             // prefer a clean word boundary
+      if (sp >= room * 0.5) p = p.slice(0, sp)
+      return p.trimEnd() + '… ' + focal
+    }
+    if (focal.length <= maxChars) return focal   // focal alone is the key info
   }
-  // Square — name shares the row with the pct column (~165px + 16px gap = ~181px).
-  // Available for name ≈ 339px. Calibrated from broken "Handheld" at 70px (8 chars, ~0.605 char ratio).
-  if (len <= 4)  return 100
-  if (len <= 5)  return 86
-  if (len <= 7)  return 70
-  if (len <= 8)  return 62
-  if (len <= 10) return 52
-  if (len <= 11) return 44
-  if (len <= 13) return 40
-  return 36
+  return name.slice(0, Math.max(1, maxChars - 1)) + '…'
 }
 
 function pctFontSize(pctStr, portrait) {
@@ -107,15 +126,22 @@ function pctFontSize(pctStr, portrait) {
 
 function HeroContent({ label, name, pct, count, portrait = false }) {
   const pctStr  = pct.toFixed(1) + '%'
-  const nameSz  = nameFontSize(name, portrait)
   const pctSz   = pctFontSize(pctStr, portrait)
+
+  // Width available for the hero name. Portrait: own line, full inner width (504px).
+  // Square: shares its row with the pct column, so subtract the pct's width + gap.
+  const nameAvail = portrait
+    ? 504
+    : 560 - Math.ceil(pctStr.length * pctSz * MONO_RATIO) - 16
+  const nameSz  = nameFontSize(name.length, nameAvail, portrait ? 130 : 100)
+  const display = fitName(name, fitChars(nameAvail, nameSz))
 
   if (portrait) {
     return (
       <div style={{ flexShrink: 0 }}>
         <div style={{ ...viewLabel, fontSize: 30, letterSpacing: '0.08em', marginBottom: 20 }}>{label}</div>
         <div style={{ fontSize: nameSz, fontWeight: 700, color: c.ink, fontFamily: c.mono, lineHeight: 1, marginBottom: 20, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {name}
+          {display}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, marginBottom: 14 }}>
           <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: c.mono, lineHeight: 1, ...gradientText, display: 'block' }}>
@@ -139,7 +165,7 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
             fontSize: nameSz, fontWeight: 700, color: c.ink, fontFamily: c.mono,
             lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            {name}
+            {display}
           </div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: 4 }}>
@@ -171,9 +197,10 @@ function BarList({ data, topN = 5, portrait = false }) {
     <div style={outerStyle}>
       {shown.map((d) => (
         <div key={d.name}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-            <span style={{ fontSize: labelSz, color: c.ink2, fontFamily: c.mono }}>{d.name}</span>
-            <span style={{ fontSize: labelSz, color: c.ink2, fontFamily: c.mono }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 5 }}>
+            {/* Name flexes and truncates with … ; the value column never shrinks or wraps */}
+            <span style={{ fontSize: labelSz, color: c.ink2, fontFamily: c.mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{d.name}</span>
+            <span style={{ fontSize: labelSz, color: c.ink2, fontFamily: c.mono, whiteSpace: 'nowrap', flexShrink: 0 }}>
               {d.pct.toFixed(1)}%  ·  {d.count} {d.count === 1 ? 'Shot' : 'Shots'}
             </span>
           </div>
@@ -257,7 +284,7 @@ function CameraView({ camData, portrait }) {
           {camData.map((cam, i) => (
             <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: portrait ? 18 : 14 }}>
               <div style={{ width: swatchSz, height: swatchSz, borderRadius: 4, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
-              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, flex: 1 }}>{cam.name} CAMERA</span>
+              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cam.name} CAMERA</span>
               <span style={{ fontFamily: c.mono, fontSize: pctSz, fontWeight: 600, color: c.ink }}>{cam.pct.toFixed(1)}%</span>
               <span style={{ fontFamily: c.mono, fontSize: countSz, color: c.ink2, width: countW, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
             </div>

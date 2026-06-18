@@ -1,4 +1,4 @@
-import { useTheme } from '../ThemeContext.jsx'
+import { useTheme } from '../theme-context'
 
 export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [] }) {
   useTheme() // subscribe so filter panel re-renders on theme change

@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-
-const ThemeContext = createContext()
+import { useState, useEffect } from 'react'
+import { ThemeContext, useTheme } from './theme-context'
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => localStorage.getItem('camlog-theme') || 'dark')
@@ -15,10 +14,6 @@ export function ThemeProvider({ children }) {
       {children}
     </ThemeContext.Provider>
   )
-}
-
-export function useTheme() {
-  return useContext(ThemeContext)
 }
 
 export function ThemeToggleButton({ className = '' }) {

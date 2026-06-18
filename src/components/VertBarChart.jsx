@@ -8,7 +8,7 @@ import {
   Cell,
   LabelList,
 } from 'recharts'
-import { useTheme } from '../ThemeContext.jsx'
+import { useTheme } from '../theme-context'
 import { useContainerWidth } from '../hooks/useContainerWidth'
 
 const CustomTooltip = ({ active, payload, label, countLabel }) => {

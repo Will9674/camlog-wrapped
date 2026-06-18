@@ -8,6 +8,8 @@ import { fmtDate } from '../utils/format'
 const GRADIENT = 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)'
 export const CARD_SIZE = 600
 export const CARD_HEIGHT_STORY = Math.round(CARD_SIZE * 16 / 9)  // 1067
+// Extra top padding in portrait to clear the Instagram story handle/avatar overlay
+const STORY_TOP_PAD = 140
 
 const c = {
   bg: '#111111',
@@ -67,18 +69,25 @@ function CardFooter() {
 function nameFontSize(name, portrait) {
   const len = (name || '').length
   if (portrait) {
+    // Portrait inner width ≈ 504px. Each tier verified at ~0.605 char ratio.
     if (len <= 4)  return 130
     if (len <= 6)  return 108
     if (len <= 9)  return 88
     if (len <= 12) return 70
-    return 56
+    if (len <= 15) return 52
+    if (len <= 18) return 44
+    return 36
   }
-  // Square — name is the dominant element
+  // Square — name shares the row with the pct column (~165px + 16px gap = ~181px).
+  // Available for name ≈ 339px. Calibrated from broken "Handheld" at 70px (8 chars, ~0.605 char ratio).
   if (len <= 4)  return 100
-  if (len <= 6)  return 86
-  if (len <= 8)  return 70
-  if (len <= 11) return 56
-  return 44
+  if (len <= 5)  return 86
+  if (len <= 7)  return 70
+  if (len <= 8)  return 62
+  if (len <= 10) return 52
+  if (len <= 11) return 44
+  if (len <= 13) return 40
+  return 36
 }
 
 function pctFontSize(pctStr, portrait) {
@@ -105,7 +114,7 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
     return (
       <div style={{ flexShrink: 0 }}>
         <div style={{ ...viewLabel, fontSize: 30, letterSpacing: '0.08em', marginBottom: 20 }}>{label}</div>
-        <div style={{ fontSize: nameSz, fontWeight: 700, color: c.ink, fontFamily: c.mono, lineHeight: 1, marginBottom: 20 }}>
+        <div style={{ fontSize: nameSz, fontWeight: 700, color: c.ink, fontFamily: c.mono, lineHeight: 1, marginBottom: 20, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {name}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, marginBottom: 14 }}>
@@ -128,7 +137,7 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize: nameSz, fontWeight: 700, color: c.ink, fontFamily: c.mono,
-            lineHeight: 1.1, wordBreak: 'break-word',
+            lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {name}
           </div>
@@ -389,7 +398,10 @@ export function ShareCardContent({ viewId, rows, stats, projectTitle, portrait =
       width: CARD_SIZE,
       height: portrait ? CARD_HEIGHT_STORY : CARD_SIZE,
       background: c.bg,
-      padding: portrait ? 48 : 40,
+      paddingTop: portrait ? STORY_TOP_PAD : 40,
+      paddingRight: portrait ? 48 : 40,
+      paddingBottom: portrait ? 48 : 40,
+      paddingLeft: portrait ? 48 : 40,
       boxSizing: 'border-box',
       display: 'flex',
       flexDirection: 'column',

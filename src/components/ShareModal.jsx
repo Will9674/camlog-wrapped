@@ -102,10 +102,10 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
 
       {/* Modal — flex column, capped at 90dvh so it never overflows the visible screen */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
-        <div className="bg-(--c-surface) border border-(--c-border) rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto flex flex-col max-h-[90dvh]">
+        <div className="bg-(--c-surface) border border-(--c-border) rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto flex flex-col max-h-[95dvh] sm:max-h-[90dvh]">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-(--c-border) flex-shrink-0">
+          <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-(--c-border) flex-shrink-0">
             <span className="font-['DM_Mono'] text-sm font-medium text-(--c-ink)">Share as Image</span>
             <button
               onClick={onClose}
@@ -119,7 +119,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
           </div>
 
           {/* Format picker */}
-          <div className="px-6 pt-4 pb-3 flex-shrink-0">
+          <div className="px-6 pt-3 pb-2 flex-shrink-0">
             <div className="flex gap-1.5">
               {FORMATS.map((f) => (
                 <button
@@ -137,7 +137,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
               ResizeObserver measures this container and scales the card to fill it. */}
           <div
             ref={previewAreaRef}
-            className="flex-1 min-h-0 flex justify-center items-start px-6 pb-4 overflow-hidden"
+            className="flex-1 min-h-0 flex justify-center items-start px-6 pb-2 overflow-hidden"
           >
             <div style={{ width: effectivePreviewW, height: previewH, overflow: 'hidden', borderRadius: 10, flexShrink: 0 }}>
               <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: CARD_SIZE, height: cardH }}>
@@ -153,7 +153,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
           </div>
 
           {/* View picker — always visible */}
-          <div className="px-6 pb-3 flex-shrink-0">
+          <div className="px-6 pb-2 flex-shrink-0">
             <div className="flex flex-wrap gap-1.5">
               {VIEWS.map((v) => (
                 <button
@@ -168,7 +168,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
           </div>
 
           {/* Save button — always visible */}
-          <div className="px-6 pb-5 pt-3 border-t border-(--c-border) flex-shrink-0">
+          <div className="px-6 pb-4 pt-2 border-t border-(--c-border) flex-shrink-0">
             <button
               onClick={handleExport}
               disabled={exporting}

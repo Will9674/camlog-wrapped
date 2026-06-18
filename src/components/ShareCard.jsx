@@ -330,6 +330,11 @@ function DaysView({ perDayData, stats, portrait }) {
             ))}
           </div>
         )}
+        {portrait && !showDateLabels && (
+          <div style={{ textAlign: 'center', fontSize: 16, color: c.ink, fontFamily: c.mono, letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 10, flexShrink: 0 }}>
+            Shots Per Day
+          </div>
+        )}
         {!portrait && (
           <div style={{ textAlign: 'center', fontSize: 13, color: c.ink, fontFamily: c.mono, letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 10, flexShrink: 0 }}>
             Shots Per Day

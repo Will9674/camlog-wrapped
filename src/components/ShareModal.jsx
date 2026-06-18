@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ShareCardContent, CARD_SIZE, CARD_HEIGHT_STORY } from './ShareCard'
 
 const PREVIEW_W = 300
@@ -22,13 +22,28 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
   const [exporting, setExporting]     = useState(false)
   const [exported, setExported]       = useState(false)
   const [exportError, setExportError] = useState(false)
+  const [vpH, setVpH]                 = useState(() => window.innerHeight)
   const exportRef = useRef(null)
 
-  const portrait    = format === 'story'
-  const cardH       = portrait ? CARD_HEIGHT_STORY : CARD_SIZE
-  const previewH    = Math.round(PREVIEW_W * (cardH / CARD_SIZE))
-  const scale       = PREVIEW_W / CARD_SIZE
-  const pixelRatio  = portrait ? (1080 / CARD_SIZE) : 3
+  useEffect(() => {
+    const handler = () => setVpH(window.innerHeight)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  const portrait   = format === 'story'
+  const cardH      = portrait ? CARD_HEIGHT_STORY : CARD_SIZE
+  const pixelRatio = portrait ? (1080 / CARD_SIZE) : 3
+
+  // In portrait mode, shrink preview so all UI fits within 90vh without scrolling.
+  // Reserved: header ~56px, format picker ~52px, view picker ~56px, save ~72px, gaps ~36px = ~272px
+  const RESERVED_H = 272
+  const maxPortraitPreviewH = vpH * 0.9 - RESERVED_H
+  const effectivePreviewW = portrait
+    ? Math.min(PREVIEW_W, Math.max(160, Math.round(maxPortraitPreviewH * CARD_SIZE / CARD_HEIGHT_STORY)))
+    : PREVIEW_W
+  const previewH = Math.round(effectivePreviewW * (cardH / CARD_SIZE))
+  const scale    = effectivePreviewW / CARD_SIZE
 
   async function handleExport() {
     const el = exportRef.current
@@ -91,57 +106,52 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
             </button>
           </div>
 
-          {/* Scrollable body */}
-          <div className="overflow-y-auto flex-1 min-h-0">
-
-            {/* Format picker */}
-            <div className="px-6 pt-4 pb-3">
-              <div className="flex gap-1.5">
-                {FORMATS.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => setFormat(f.id)}
-                    className={`${btnBase} ${format === f.id ? btnActive : btnInactive}`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+          {/* Format picker */}
+          <div className="px-6 pt-4 pb-3 flex-shrink-0">
+            <div className="flex gap-1.5">
+              {FORMATS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setFormat(f.id)}
+                  className={`${btnBase} ${format === f.id ? btnActive : btnInactive}`}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
-
-            {/* Preview */}
-            <div className="flex justify-center pb-4 px-6">
-              <div style={{ width: PREVIEW_W, height: previewH, overflow: 'hidden', borderRadius: 10, flexShrink: 0 }}>
-                <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: CARD_SIZE, height: cardH }}>
-                  <ShareCardContent
-                    viewId={activeView}
-                    rows={rows}
-                    stats={stats}
-                    projectTitle={projectTitle}
-                    portrait={portrait}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* View picker */}
-            <div className="px-6 pb-4">
-              <div className="flex flex-wrap gap-1.5">
-                {VIEWS.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setActiveView(v.id)}
-                    className={`${btnBase} ${activeView === v.id ? btnActive : btnInactive}`}
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
           </div>
 
-          {/* Save button — always visible at bottom */}
+          {/* Preview */}
+          <div className="flex justify-center pb-4 px-6 flex-shrink-0">
+            <div style={{ width: effectivePreviewW, height: previewH, overflow: 'hidden', borderRadius: 10, flexShrink: 0 }}>
+              <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: CARD_SIZE, height: cardH }}>
+                <ShareCardContent
+                  viewId={activeView}
+                  rows={rows}
+                  stats={stats}
+                  projectTitle={projectTitle}
+                  portrait={portrait}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* View picker — always visible, outside scroll */}
+          <div className="px-6 pb-3 flex-shrink-0">
+            <div className="flex flex-wrap gap-1.5">
+              {VIEWS.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setActiveView(v.id)}
+                  className={`${btnBase} ${activeView === v.id ? btnActive : btnInactive}`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Save button — always visible */}
           <div className="px-6 pb-5 pt-3 border-t border-(--c-border) flex-shrink-0">
             <button
               onClick={handleExport}

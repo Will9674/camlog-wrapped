@@ -30,7 +30,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
 
   const portrait   = format === 'story'
   const cardH      = portrait ? CARD_HEIGHT_STORY : CARD_SIZE
-  const pixelRatio = portrait ? (1080 / CARD_SIZE) : 3
+  const pixelRatio = 3
 
   // Measure the flex-1 preview area and compute scale to fill it.
   // Only update on the first measure or when width changes (orientation change).
@@ -93,7 +93,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
   const btnActive   = 'bg-(--c-accent) text-white border-transparent'
   const btnInactive = 'bg-transparent text-(--c-nav-fg) border-(--c-border) hover:text-(--c-nav-fg-hover) hover:border-(--c-border-strong)'
 
-  const exportLabel = portrait ? 'Save PNG  1080 × 1920' : 'Save PNG  1080 × 1080'
+  const exportLabel = portrait ? 'Save PNG  1800 × 3200' : 'Save PNG  1800 × 1800'
 
   return (
     <>

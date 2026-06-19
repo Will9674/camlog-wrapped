@@ -155,7 +155,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
           }}>Wrapped</span>
         </span>
         {projectTitle && (
-          <span className="flex-1 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-(--c-ink) tracking-tight">
+          <span className="flex-1 min-w-0 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium text-(--c-ink) tracking-tight line-clamp-2">
             {projectTitle}
           </span>
         )}

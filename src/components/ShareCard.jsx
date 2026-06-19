@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState, useLayoutEffect } from 'react'
 import {
   lensUsage, supportUsage, cameraUsage, filterUsage,
   takesPerDay, deduplicateShots, getCameraColorByIndex,
@@ -65,48 +65,112 @@ function CardFooter() {
 // ── Dynamic font sizing ───────────────────────────────────────────────────────
 // Name is the BIG hero figure; pct is the supporting figure.
 //
-// DM Mono is monospace with a measured advance width of exactly 0.60em (faux-bold
-// at weight 700 keeps the same advance), so a string's width is precisely
-// chars × fontSize × MONO_RATIO. That makes the fit math exact — no calibrated
-// tiers needed — and guarantees text scales down smoothly before it ever clips.
-const MONO_RATIO = 0.6
-const NAME_MIN = 36
+// The hero name is sized by canvas.measureText() (see FitText), not a fixed ratio.
+// A hard-coded advance like 0.60em is slightly off on iOS, which leaves short names
+// like "Handheld" or "ND 0.3" 1–2px over the box and CSS-clips them. Canvas reads
+// whatever font the device actually loaded, so it's exact on every platform.
 
-// Largest size (capped at `cap`, floored at NAME_MIN) at which `len` monospace
-// chars fit within `width` px.
-function nameFontSize(len, width, cap) {
-  const ideal = Math.floor(width / (Math.max(len, 1) * MONO_RATIO))
-  return Math.max(NAME_MIN, Math.min(cap, ideal))
-}
-
-// How many monospace chars fit in `width` px at `size`.
-function fitChars(width, size) {
-  return Math.floor(width / (size * MONO_RATIO))
-}
+const NAME_FLOOR = 32   // shrink to here before resorting to an ellipsis
 
 // Trailing lens focal length, e.g. "24-290mm", "32mm", "18-35mm".
 const FOCAL_RE = /\s*(\d+(?:[.\-x×]\d+)?\s*mm)$/i
 
-// Shortens a name to fit `maxChars`. For lens names it preserves the focal length
-// (the part that matters most) and trims the prefix instead of the tail:
-// "Angenieux Optimo 24-290mm" → "Angenieux… 24-290mm" rather than "Angenieux Opti…".
-// Non-lens names (e.g. filters) fall back to a plain trailing ellipsis.
-function fitName(name, maxChars) {
-  if (name.length <= maxChars) return name
+// Builds the shortest acceptable label for a name that won't fit even at the font
+// floor. `fits(str)` measures the candidate at the floor size. Lens names keep their
+// focal length and trim the prefix ("Angenieux… 24-290mm"); everything else uses a
+// plain trailing ellipsis. (Leading-focal names like "35mm Cooke S4" keep the focal
+// naturally, since the ellipsis falls at the end.)
+function shortenToFit(name, fits) {
+  if (fits(name)) return name
   const m = name.match(FOCAL_RE)
   if (m) {
     const focal = m[1].replace(/\s+/g, '')
     const prefix = name.slice(0, m.index).trimEnd()
-    const room = maxChars - focal.length - 2   // prefix + "… "
-    if (room >= 2) {
-      let p = prefix.slice(0, room)
-      const sp = p.lastIndexOf(' ')             // prefer a clean word boundary
-      if (sp >= room * 0.5) p = p.slice(0, sp)
-      return p.trimEnd() + '… ' + focal
+    for (let len = prefix.length - 1; len >= 1; len--) {
+      let p = prefix.slice(0, len)
+      const sp = p.lastIndexOf(' ')              // prefer a clean word boundary
+      if (sp >= len * 0.5) p = p.slice(0, sp)
+      const candidate = p.trimEnd() + '… ' + focal
+      if (fits(candidate)) return candidate
     }
-    if (focal.length <= maxChars) return focal   // focal alone is the key info
+    if (fits(focal)) return focal
   }
-  return name.slice(0, Math.max(1, maxChars - 1)) + '…'
+  for (let len = name.length - 1; len >= 1; len--) {
+    if (fits(name.slice(0, len).trimEnd() + '…')) return name.slice(0, len).trimEnd() + '…'
+  }
+  return '…'
+}
+
+// Renders text that auto-fits its container's width. Uses canvas.measureText() for
+// glyph width — this is immune to the iOS Safari bug where an off-screen DOM span
+// inside an overflow:hidden ancestor gets clipped to zero (making offsetWidth
+// useless and leaving the text permanently at maxSize, where CSS clips it).
+// Shrinks font from `maxSize` down to `NAME_FLOOR`; only ellipsizes below the floor.
+function FitText({ text, maxSize, weight = 700, style }) {
+  const boxRef = useRef(null)
+  const [{ size, display }, setFit] = useState({ size: maxSize, display: text })
+
+  useLayoutEffect(() => {
+    let cancelled = false
+
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const measureWidth = (str, px) => {
+      ctx.font = `${weight} ${px}px "DM Mono", monospace`
+      return ctx.measureText(str).width
+    }
+
+    const compute = () => {
+      if (cancelled) return
+      const box = boxRef.current
+      if (!box) return
+      const avail = box.clientWidth
+      if (!avail) return   // not yet laid out — ResizeObserver will retry
+
+      const wFull = measureWidth(text, maxSize)
+      let nextSize, nextDisplay
+      if (wFull <= avail) {
+        nextSize = maxSize
+        nextDisplay = text
+      } else {
+        const scaled = Math.floor(maxSize * (avail / wFull))
+        if (scaled >= NAME_FLOOR) {
+          nextSize = scaled
+          nextDisplay = text
+        } else {
+          nextSize = NAME_FLOOR
+          nextDisplay = shortenToFit(text, (s) => measureWidth(s, NAME_FLOOR) <= avail)
+        }
+      }
+      setFit((prev) =>
+        prev.size === nextSize && prev.display === nextDisplay ? prev : { size: nextSize, display: nextDisplay }
+      )
+    }
+
+    compute()
+    const raf = requestAnimationFrame(compute)
+    // Re-measure once DM Mono bold is confirmed available; canvas then uses the real font.
+    document.fonts?.load?.(`${weight} 1px "DM Mono"`)?.then?.(compute)?.catch?.(() => {})
+
+    // Retry when the container gets its layout width (iOS can have avail=0 initially).
+    const box = boxRef.current
+    const obs = box ? new ResizeObserver(compute) : null
+    obs?.observe(box)
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf)
+      obs?.disconnect()
+    }
+  }, [text, maxSize, weight])
+
+  return (
+    <div ref={boxRef} style={{ minWidth: 0 }}>
+      <div style={{ ...style, fontSize: size, fontWeight: weight, fontFamily: c.mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {display}
+      </div>
+    </div>
+  )
 }
 
 function pctFontSize(pctStr, portrait) {
@@ -128,21 +192,15 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
   const pctStr  = pct.toFixed(1) + '%'
   const pctSz   = pctFontSize(pctStr, portrait)
 
-  // Width available for the hero name. Portrait: own line, full inner width (504px).
-  // Square: shares its row with the pct column, so subtract the pct's width + gap.
-  const nameAvail = portrait
-    ? 504
-    : 560 - Math.ceil(pctStr.length * pctSz * MONO_RATIO) - 16
-  const nameSz  = nameFontSize(name.length, nameAvail, portrait ? 130 : 100)
-  const display = fitName(name, fitChars(nameAvail, nameSz))
-
   if (portrait) {
     return (
       <div style={{ flexShrink: 0 }}>
         <div style={{ ...viewLabel, fontSize: 30, letterSpacing: '0.08em', marginBottom: 20 }}>{label}</div>
-        <div style={{ fontSize: nameSz, fontWeight: 700, color: c.ink, fontFamily: c.mono, lineHeight: 1, marginBottom: 20, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {display}
-        </div>
+        <FitText
+          text={name}
+          maxSize={130}
+          style={{ color: c.ink, lineHeight: 1, marginBottom: 20 }}
+        />
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, marginBottom: 14 }}>
           <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: c.mono, lineHeight: 1, ...gradientText, display: 'block' }}>
             {pctStr}
@@ -161,12 +219,11 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
       <div style={{ ...viewLabel, fontSize: 24, letterSpacing: '0.10em', marginBottom: 14 }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: nameSz, fontWeight: 700, color: c.ink, fontFamily: c.mono,
-            lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {display}
-          </div>
+          <FitText
+            text={name}
+            maxSize={100}
+            style={{ color: c.ink, lineHeight: 1.1 }}
+          />
         </div>
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: 4 }}>
           <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: c.mono, lineHeight: 1.1, ...gradientText, display: 'block' }}>

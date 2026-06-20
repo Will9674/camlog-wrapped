@@ -343,22 +343,27 @@ function cameraRowSizing(n, portrait) {
 function CameraView({ camData, portrait }) {
   if (!camData.length) return <EmptyCard label="No camera data recorded" />
 
-  const n = camData.length
-  const { pctSz, rowGap } = cameraRowSizing(n, portrait)
+  const MAX_N    = portrait ? 12 : 8
+  const overflow = Math.max(0, camData.length - MAX_N)
+  const shown    = camData.slice(0, MAX_N)
 
-  // Scale supporting sizes proportionally once pctSz drops below baseline
+  // When capped, use MAX_N+1 as the effective slot count so the "+N more" row
+  // has a reserved slot and the camera rows don't push into it.
+  const effectiveN = overflow > 0 ? MAX_N + 1 : camData.length
+  const { pctSz, rowGap } = cameraRowSizing(effectiveN, portrait)
+
   const BASE_PCT_SZ = portrait ? 44 : 28
   const r = pctSz / BASE_PCT_SZ
 
-  const swatchSz = Math.max(portrait ? 10 : 8,  Math.round((portrait ? 26 : 16) * r))
-  const nameSz   = Math.max(portrait ? 10 : 10, Math.round((portrait ? 26 : 18) * r))
-  const countSz  = Math.max(portrait ? 8  : 8,  Math.round((portrait ? 22 : 16) * r))
-  const countW   = Math.max(portrait ? 60 : 40, Math.round((portrait ? 130 : 96) * r))
+  const swatchSz   = Math.max(portrait ? 10 : 8,  Math.round((portrait ? 26 : 16) * r))
+  const nameSz     = Math.max(portrait ? 10 : 10, Math.round((portrait ? 26 : 18) * r))
+  const countSz    = Math.max(portrait ? 8  : 8,  Math.round((portrait ? 22 : 16) * r))
+  const countW     = Math.max(portrait ? 60 : 40, Math.round((portrait ? 130 : 96) * r))
+  const rowItemGap = portrait ? 18 : 14
 
   const barH         = portrait ? 56 : 44
   const labelSz      = portrait ? 30 : 24
   const labelSpacing = portrait ? '0.08em' : '0.10em'
-  const rowItemGap   = portrait ? 18 : 14
 
   return (
     <>
@@ -370,7 +375,7 @@ function CameraView({ camData, portrait }) {
           ))}
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: rowGap }}>
-          {camData.map((cam, i) => (
+          {shown.map((cam, i) => (
             <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
               <div style={{ width: swatchSz, height: swatchSz, borderRadius: 4, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
               <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cam.name} CAMERA</span>
@@ -378,6 +383,14 @@ function CameraView({ camData, portrait }) {
               <span style={{ fontFamily: c.mono, fontSize: countSz, color: c.ink2, width: countW, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
             </div>
           ))}
+          {overflow > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
+              <div style={{ width: swatchSz, flexShrink: 0 }} />
+              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink2, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                +{overflow} more camera{overflow > 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </>

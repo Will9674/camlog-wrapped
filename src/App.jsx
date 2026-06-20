@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import UploadScreen from './components/UploadScreen'
 import Dashboard from './components/Dashboard'
 import { parseCSV, processData } from './utils/parseCSV'
@@ -11,6 +11,20 @@ export default function App() {
   // Bumped on every successful load so Dashboard remounts fresh for new data,
   // giving it a correct initial date range without syncing state in an effect.
   const [loadId, setLoadId] = useState(0)
+
+  useEffect(() => {
+    if (window.opener) {
+      try { window.opener.postMessage({ type: 'camlog-wrapped-ready' }, 'https://camlog.app') } catch (_) {}
+    }
+    function onMessage(evt) {
+      if (evt.origin !== 'https://camlog.app') return
+      if (evt.data?.type !== 'camlog-csv') return
+      const { csv, filename } = evt.data
+      handleFile(new File([csv], filename, { type: 'text/csv' }))
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
 
   function titleFromFilename(name) {
     return name

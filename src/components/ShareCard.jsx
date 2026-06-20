@@ -343,11 +343,10 @@ function cameraRowSizing(n, portrait) {
 function CameraView({ camData, portrait }) {
   if (!camData.length) return <EmptyCard label="No camera data recorded" />
 
-  const MAX_N    = portrait ? 12 : 8
-  const overflow = Math.max(0, camData.length - MAX_N)
-  const shown    = camData.slice(0, MAX_N)
+  const MAX_N  = portrait ? 12 : 8
+  const shown  = camData.slice(0, MAX_N)
 
-  const effectiveN = overflow > 0 ? MAX_N : camData.length
+  const effectiveN = shown.length
   const { pctSz, rowGap } = cameraRowSizing(effectiveN, portrait)
 
   const BASE_PCT_SZ = portrait ? 44 : 28
@@ -363,22 +362,9 @@ function CameraView({ camData, portrait }) {
   const labelSz      = portrait ? 30 : 24
   const labelSpacing = portrait ? '0.08em' : '0.10em'
 
-  const overflowLabel = overflow > 0
-    ? (overflow <= 3
-        ? `+${camData.slice(MAX_N).map(cam => cam.name).join(', ')} ${overflow > 1 ? 'Cameras' : 'Camera'}`
-        : `+${overflow} more Cameras`)
-    : null
-
   return (
     <>
-      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ ...viewLabel, fontSize: labelSz, letterSpacing: labelSpacing }}>Camera Breakdown</div>
-        {overflowLabel && (
-          <span style={{ fontFamily: c.mono, fontSize: Math.max(portrait ? 12 : 10, Math.round(nameSz * 0.85)), color: c.ink2, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-            {overflowLabel}
-          </span>
-        )}
-      </div>
+      <div style={{ ...viewLabel, fontSize: labelSz, letterSpacing: labelSpacing, flexShrink: 0 }}>Camera Breakdown</div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: portrait ? 14 : 10, minHeight: 0 }}>
         <div style={{ display: 'flex', height: barH, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
           {camData.map((cam, i) => (

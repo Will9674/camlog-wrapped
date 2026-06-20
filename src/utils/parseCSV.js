@@ -89,6 +89,7 @@ export function processData(rawRows) {
     _date: formatDate(row['Date'] || row['date'] || ''),
     _circled: (row['Circled'] || '').toLowerCase() === 'true',
     _camera: (row['Camera'] || '').toUpperCase().trim(),
+    _cameraModel: (row['Camera Model'] || '').trim(),
     _lens: (row['Lens'] || '').trim(),
     _scene: (row['Scene'] || '').trim(),
     _support: parseSupportType(row['Notes'] || '', row['Description'] || ''),

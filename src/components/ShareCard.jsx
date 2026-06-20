@@ -363,9 +363,22 @@ function CameraView({ camData, portrait }) {
   const labelSz      = portrait ? 30 : 24
   const labelSpacing = portrait ? '0.08em' : '0.10em'
 
+  const overflowLabel = overflow > 0
+    ? (overflow <= 3
+        ? `+${camData.slice(MAX_N).map(cam => cam.name).join(', ')} ${overflow > 1 ? 'Cameras' : 'Camera'}`
+        : `+${overflow} more Cameras`)
+    : null
+
   return (
     <>
-      <div style={{ ...viewLabel, fontSize: labelSz, letterSpacing: labelSpacing, flexShrink: 0 }}>Camera Breakdown</div>
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ ...viewLabel, fontSize: labelSz, letterSpacing: labelSpacing }}>Camera Breakdown</div>
+        {overflowLabel && (
+          <span style={{ fontFamily: c.mono, fontSize: Math.max(portrait ? 12 : 10, Math.round(nameSz * 0.85)), color: c.ink2, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+            {overflowLabel}
+          </span>
+        )}
+      </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: portrait ? 14 : 10, minHeight: 0 }}>
         <div style={{ display: 'flex', height: barH, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
           {camData.map((cam, i) => (
@@ -376,21 +389,15 @@ function CameraView({ camData, portrait }) {
           {shown.map((cam, i) => (
             <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
               <div style={{ width: swatchSz, height: swatchSz, borderRadius: 4, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
-              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cam.name} CAMERA</span>
+              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {cam.model ? `${cam.name} · ${cam.model}` : `${cam.name} CAMERA`}
+              </span>
               <span style={{ fontFamily: c.mono, fontSize: pctSz, fontWeight: 600, color: c.ink }}>{cam.pct.toFixed(1)}%</span>
               <span style={{ fontFamily: c.mono, fontSize: countSz, color: c.ink2, width: countW, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
             </div>
           ))}
         </div>
       </div>
-      {overflow > 0 && (
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: rowItemGap }}>
-          <div style={{ width: swatchSz, flexShrink: 0 }} />
-          <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            + {camData.slice(MAX_N).map(cam => cam.name).join(', ')} {overflow > 1 ? 'Cameras' : 'Camera'}
-          </span>
-        </div>
-      )}
     </>
   )
 }

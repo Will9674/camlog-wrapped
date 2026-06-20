@@ -49,11 +49,16 @@ export default function CameraView({ rows, stats }) {
                 className="flex-shrink-0 rounded-sm"
                 style={{ width: 14, height: 14, background: getCameraColorByIndex(cam.name, i) }}
               />
-              <span className="font-['DM_Mono'] text-sm text-(--c-ink) flex-1">{cam.name}</span>
-              <span className="font-['DM_Mono'] text-sm text-(--c-ink2)">
+              <div className="flex-1 min-w-0">
+                <div className="font-['DM_Mono'] text-sm text-(--c-ink)">{cam.name}</div>
+                {cam.model && (
+                  <div className="font-['DM_Mono'] text-xs text-(--c-ink2) truncate">{cam.model}</div>
+                )}
+              </div>
+              <span className="font-['DM_Mono'] text-sm text-(--c-ink2) flex-shrink-0">
                 {cam.pct.toFixed(1)}%
               </span>
-              <span className="font-['DM_Mono'] text-sm text-(--c-ink3) w-24 text-right">
+              <span className="font-['DM_Mono'] text-sm text-(--c-ink3) w-24 text-right flex-shrink-0">
                 {cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}
               </span>
             </div>

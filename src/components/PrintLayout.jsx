@@ -15,11 +15,14 @@ function CameraPrintChart({ data }) {
         ))}
       </div>
       {data.map((cam, i) => (
-        <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
-          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1a1916', flex: 1 }}>{cam.name} CAMERA</span>
-          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6b6762' }}>{cam.pct.toFixed(1)}%</span>
-          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#a09e99', width: 80, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
+        <div key={cam.name} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: getCameraColorByIndex(cam.name, i), flexShrink: 0, marginTop: 2 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1a1916' }}>{cam.name} CAMERA</div>
+            {cam.model && <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 9, color: '#6b6762', marginTop: 2 }}>{cam.model}</div>}
+          </div>
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6b6762', flexShrink: 0 }}>{cam.pct.toFixed(1)}%</span>
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#a09e99', width: 80, textAlign: 'right', flexShrink: 0 }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
         </div>
       ))}
     </div>

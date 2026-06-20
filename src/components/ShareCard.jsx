@@ -316,17 +316,49 @@ function SupportView({ suppData, portrait }) {
   )
 }
 
+function cameraRowSizing(n, portrait) {
+  // Design-confirmed baselines: full-size values that fit at threshold n
+  const BASE_PCT_SZ = portrait ? 44 : 28
+  const BASE_GAP    = portrait ? 28 : 14
+  const BASE_N      = portrait ? 6  : 5
+  const MIN_GAP     = portrait ? 4  : 2
+  const MIN_PCT_SZ  = portrait ? 14 : 10
+
+  if (n <= BASE_N) return { pctSz: BASE_PCT_SZ, rowGap: BASE_GAP }
+
+  // Available height back-computed from the confirmed-fit baseline
+  const availH = BASE_N * BASE_PCT_SZ + (BASE_N - 1) * BASE_GAP
+
+  // Phase 1: keep pctSz, reduce gap
+  const idealGap = (availH - n * BASE_PCT_SZ) / Math.max(n - 1, 1)
+  if (idealGap >= MIN_GAP) {
+    return { pctSz: BASE_PCT_SZ, rowGap: Math.floor(idealGap) }
+  }
+
+  // Phase 2: gap at minimum, reduce pctSz
+  const pctSz = Math.max(MIN_PCT_SZ, Math.floor((availH - (n - 1) * MIN_GAP) / n))
+  return { pctSz, rowGap: MIN_GAP }
+}
+
 function CameraView({ camData, portrait }) {
   if (!camData.length) return <EmptyCard label="No camera data recorded" />
-  const swatchSz  = portrait ? 26 : 16
-  const nameSz    = portrait ? 26 : 18
-  const pctSz     = portrait ? 44 : 28
-  const countSz   = portrait ? 22 : 16
-  const countW    = portrait ? 130 : 96
-  const rowGap    = portrait ? 28 : 14
-  const barH      = portrait ? 56 : 44
-  const labelSz   = portrait ? 30 : 24
+
+  const n = camData.length
+  const { pctSz, rowGap } = cameraRowSizing(n, portrait)
+
+  // Scale supporting sizes proportionally once pctSz drops below baseline
+  const BASE_PCT_SZ = portrait ? 44 : 28
+  const r = pctSz / BASE_PCT_SZ
+
+  const swatchSz = Math.max(portrait ? 10 : 8,  Math.round((portrait ? 26 : 16) * r))
+  const nameSz   = Math.max(portrait ? 10 : 10, Math.round((portrait ? 26 : 18) * r))
+  const countSz  = Math.max(portrait ? 8  : 8,  Math.round((portrait ? 22 : 16) * r))
+  const countW   = Math.max(portrait ? 60 : 40, Math.round((portrait ? 130 : 96) * r))
+
+  const barH         = portrait ? 56 : 44
+  const labelSz      = portrait ? 30 : 24
   const labelSpacing = portrait ? '0.08em' : '0.10em'
+  const rowItemGap   = portrait ? 18 : 14
 
   return (
     <>
@@ -339,7 +371,7 @@ function CameraView({ camData, portrait }) {
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: rowGap }}>
           {camData.map((cam, i) => (
-            <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: portrait ? 18 : 14 }}>
+            <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
               <div style={{ width: swatchSz, height: swatchSz, borderRadius: 4, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
               <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cam.name} CAMERA</span>
               <span style={{ fontFamily: c.mono, fontSize: pctSz, fontWeight: 600, color: c.ink }}>{cam.pct.toFixed(1)}%</span>

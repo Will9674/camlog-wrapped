@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import UploadScreen from './components/UploadScreen'
 import Dashboard from './components/Dashboard'
-import { parseCSV, processData } from './utils/parseCSV'
+import { parseCSV, parseCSVString, processData } from './utils/parseCSV'
 
 export default function App() {
   const [rows, setRows] = useState(null)
@@ -14,13 +14,12 @@ export default function App() {
 
   useEffect(() => {
     if (window.opener) {
-      try { window.opener.postMessage({ type: 'camlog-wrapped-ready' }, 'https://camlog.app') } catch (_) {}
+      try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://camlog.app') } catch (_) {}
     }
     function onMessage(evt) {
       if (evt.origin !== 'https://camlog.app') return
-      if (evt.data?.type !== 'camlog-csv') return
-      const { csv, filename } = evt.data
-      handleFile(new File([csv], filename, { type: 'text/csv' }))
+      if (evt.data?.type !== 'camlog-import') return
+      ingestCsvString(evt.data.csv, evt.data.name)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
@@ -46,6 +45,28 @@ export default function App() {
       }
       setRows(processed)
       setProjectTitle(titleFromFilename(file.name))
+      setLoadId((n) => n + 1)
+    } catch (e) {
+      setError('Failed to parse CSV. Please check the file format.')
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function ingestCsvString(csvStr, name) {
+    setLoading(true)
+    setError(null)
+    window.location.hash = ''
+    try {
+      const raw = await parseCSVString(csvStr)
+      const processed = processData(raw)
+      if (!processed.some((r) => r._scene)) {
+        setError("This doesn't look like a camera log CSV file.")
+        return
+      }
+      setRows(processed)
+      setProjectTitle(name ? name.replace(/[-_]+/g, ' ').toUpperCase() : '')
       setLoadId((n) => n + 1)
     } catch (e) {
       setError('Failed to parse CSV. Please check the file format.')

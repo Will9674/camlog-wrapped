@@ -1,15 +1,25 @@
 import Papa from 'papaparse'
 
+function _papaOptions(resolve, reject) {
+  return {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (h) => h.trim(),
+    transform: (value) => value.trim(),
+    complete: (results) => resolve(results.data),
+    error: reject,
+  }
+}
+
 export function parseCSV(file) {
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (h) => h.trim(),
-      transform: (value) => value.trim(),
-      complete: (results) => resolve(results.data),
-      error: reject,
-    })
+    Papa.parse(file, _papaOptions(resolve, reject))
+  })
+}
+
+export function parseCSVString(str) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(str, _papaOptions(resolve, reject))
   })
 }
 

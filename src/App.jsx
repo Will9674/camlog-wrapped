@@ -14,10 +14,10 @@ export default function App() {
 
   useEffect(() => {
     if (window.opener) {
-      try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://camlog.app') } catch (_) {}
+      try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://app.camlog.app') } catch (_) {}
     }
     function onMessage(evt) {
-      if (evt.origin !== 'https://camlog.app') return
+      if (evt.origin !== 'https://app.camlog.app') return
       if (evt.data?.type !== 'camlog-import') return
       ingestCsvString(evt.data.csv, evt.data.name)
     }

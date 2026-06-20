@@ -386,8 +386,8 @@ function CameraView({ camData, portrait }) {
           {overflow > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
               <div style={{ width: swatchSz, flexShrink: 0 }} />
-              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink2, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                +{overflow} more camera{overflow > 1 ? 's' : ''}
+              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                + {camData.slice(MAX_N).map(cam => cam.name).join(', ')} {overflow > 1 ? 'Cameras' : 'Camera'}
               </span>
             </div>
           )}

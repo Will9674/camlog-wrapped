@@ -347,9 +347,7 @@ function CameraView({ camData, portrait }) {
   const overflow = Math.max(0, camData.length - MAX_N)
   const shown    = camData.slice(0, MAX_N)
 
-  // When capped, use MAX_N+1 as the effective slot count so the "+N more" row
-  // has a reserved slot and the camera rows don't push into it.
-  const effectiveN = overflow > 0 ? MAX_N + 1 : camData.length
+  const effectiveN = overflow > 0 ? MAX_N : camData.length
   const { pctSz, rowGap } = cameraRowSizing(effectiveN, portrait)
 
   const BASE_PCT_SZ = portrait ? 44 : 28
@@ -384,15 +382,15 @@ function CameraView({ camData, portrait }) {
             </div>
           ))}
         </div>
-        {overflow > 0 && (
-          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: rowItemGap }}>
-            <div style={{ width: swatchSz, flexShrink: 0 }} />
-            <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              + {camData.slice(MAX_N).map(cam => cam.name).join(', ')} {overflow > 1 ? 'Cameras' : 'Camera'}
-            </span>
-          </div>
-        )}
       </div>
+      {overflow > 0 && (
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: rowItemGap }}>
+          <div style={{ width: swatchSz, flexShrink: 0 }} />
+          <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            + {camData.slice(MAX_N).map(cam => cam.name).join(', ')} {overflow > 1 ? 'Cameras' : 'Camera'}
+          </span>
+        </div>
+      )}
     </>
   )
 }

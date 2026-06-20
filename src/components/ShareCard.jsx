@@ -383,15 +383,15 @@ function CameraView({ camData, portrait }) {
               <span style={{ fontFamily: c.mono, fontSize: countSz, color: c.ink2, width: countW, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
             </div>
           ))}
-          {overflow > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
-              <div style={{ width: swatchSz, flexShrink: 0 }} />
-              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                + {camData.slice(MAX_N).map(cam => cam.name).join(', ')} {overflow > 1 ? 'Cameras' : 'Camera'}
-              </span>
-            </div>
-          )}
         </div>
+        {overflow > 0 && (
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: rowItemGap }}>
+            <div style={{ width: swatchSz, flexShrink: 0 }} />
+            <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              + {camData.slice(MAX_N).map(cam => cam.name).join(', ')} {overflow > 1 ? 'Cameras' : 'Camera'}
+            </span>
+          </div>
+        )}
       </div>
     </>
   )

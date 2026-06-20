@@ -15,8 +15,8 @@ function CameraPrintChart({ data }) {
         ))}
       </div>
       {data.map((cam, i) => (
-        <div key={cam.name} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: getCameraColorByIndex(cam.name, i), flexShrink: 0, marginTop: 2 }} />
+        <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
             <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1a1916' }}>{cam.name}</span>
             {cam.model ? (

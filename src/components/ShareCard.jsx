@@ -47,11 +47,11 @@ function CardFooter() {
   return (
     <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, fontFamily: c.mono, letterSpacing: '-0.01em' }}>
+        <div style={{ fontSize: 13, fontWeight: 800, fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', letterSpacing: '-0.025em' }}>
           <span style={{ color: '#ffffff' }}>Cam</span>
           <span style={{ color: c.accent }}>Log</span>
           {' '}
-          <span style={{ ...gradientText, display: 'inline-block' }}>Wrapped</span>
+          <span style={{ ...gradientText, display: 'inline-block', fontFamily: c.mono, fontWeight: 700, letterSpacing: 'normal' }}>Wrapped</span>
         </div>
         <div style={{ fontSize: 13, color: c.ink2, fontFamily: c.mono, letterSpacing: '0.06em' }}>
           camlog.app

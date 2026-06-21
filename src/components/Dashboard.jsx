@@ -145,9 +145,12 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
     <div className="min-h-screen flex flex-col bg-(--c-bg) no-print">
       {/* Top bar */}
       <header className="relative bg-(--c-surface) border-b border-(--c-border) px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
-        <span className="hidden sm:block font-['DM_Mono'] text-base font-bold text-(--c-ink) tracking-tight">
+        <span className="hidden sm:block text-base text-(--c-ink)" style={{fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', fontWeight: 800, letterSpacing: '-0.025em'}}>
           Cam<span className="text-(--c-accent)">Log</span>{' '}
           <span style={{
+            fontFamily: "'DM Mono', monospace",
+            fontWeight: 700,
+            letterSpacing: 'normal',
             background: 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',

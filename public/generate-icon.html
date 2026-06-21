@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CamLog Wrapped — Generate Icons</title>
+<style>
+  body { background:#1a1916; color:#fff; font-family:-apple-system,sans-serif; padding:24px; }
+  canvas { display:block; margin:12px 0; border-radius:22%; border:1px solid #444; }
+  button { background:#e63946; color:#fff; border:none; padding:10px 20px;
+           border-radius:8px; font-size:14px; cursor:pointer; margin:4px; }
+  p { color:#aaa; font-size:13px; margin-top:24px; }
+</style>
+</head>
+<body>
+<h2>CamLog Wrapped Icon Generator</h2>
+<p>Click each button to download the PNG, then replace the file in the <code>public/</code> folder and commit.</p>
+
+<canvas id="c180" width="180" height="180"></canvas>
+<button onclick="dl('c180','apple-touch-icon.png')">Download apple-touch-icon.png (180×180, iOS)</button>
+
+<canvas id="c512" width="512" height="512"></canvas>
+<button onclick="dl('c512','icon-512.png')">Download icon-512.png (512×512)</button>
+
+<script>
+function drawIcon(id) {
+  const canvas = document.getElementById(id);
+  const s = canvas.width;
+  const ctx = canvas.getContext('2d');
+
+  // Black rounded-square background
+  ctx.fillStyle = '#111111';
+  ctx.beginPath();
+  roundRect(ctx, 0, 0, s, s, s * 0.22);
+  ctx.fill();
+
+  const cx = s * 103 / 192, cy = s * 0.5;
+  const arcR     = s * 0.323;
+  const strokeW  = s * 0.1875;
+  const halfGap  = 40 * Math.PI / 180;
+
+  // Gradient: app colors red → yellow → blue, top to bottom across the arc
+  const topY    = cy - arcR - strokeW * 0.5;
+  const bottomY = cy + arcR + strokeW * 0.5;
+  const grad = ctx.createLinearGradient(cx, topY, cx, bottomY);
+  grad.addColorStop(0,    '#e63946');
+  grad.addColorStop(0.5,  '#fbbf24');
+  grad.addColorStop(1,    '#3b82f6');
+
+  // Gradient C arc — clockwise from lower-right gap to upper-right gap
+  ctx.strokeStyle = grad;
+  ctx.lineWidth   = strokeW;
+  ctx.lineCap     = 'round';
+  ctx.beginPath();
+  // arc from +halfGap (lower-right) counter-clockwise to -halfGap (upper-right), sweep=false
+  ctx.arc(cx, cy, arcR, halfGap, -halfGap, false);
+  ctx.stroke();
+
+  // W in Arial Black, centered inside the C
+  ctx.fillStyle    = '#ffffff';
+  ctx.font         = `900 ${Math.round(s * 0.364)}px "Arial Black", Arial, sans-serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('W', cx, cy + s * 10 / 192);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function dl(id, name) {
+  const a = document.createElement('a');
+  a.href = document.getElementById(id).toDataURL('image/png');
+  a.download = name;
+  a.click();
+}
+
+['c180', 'c512'].forEach(drawIcon);
+</script>
+</body>
+</html>

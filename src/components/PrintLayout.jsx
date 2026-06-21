@@ -199,10 +199,13 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
       <style>{`.print-layout svg { overflow: visible !important; }`}</style>
       {/* Header */}
       <div style={{ marginBottom: 28, paddingBottom: 18, borderBottom: '1px solid #d8d2c8' }}>
-        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.025em', ...s.mono, marginBottom: 8 }}>
+        <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.025em', fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', marginBottom: 8 }}>
           <span style={{ color: '#1a1916' }}>Cam</span>
           <span style={{ color: '#e63946' }}>Log</span>
           <span style={{
+            fontFamily: 'DM Mono, monospace',
+            fontWeight: 700,
+            letterSpacing: 'normal',
             background: 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',

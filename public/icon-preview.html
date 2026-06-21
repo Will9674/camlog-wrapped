@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Icon Preview — CamLog Wrapped</title>
+<style>
+  body { background: #1a1916; color: #fff; font-family: -apple-system, sans-serif; padding: 32px; margin: 0; }
+  h2 { font-size: 14px; font-weight: 600; color: #a09e99; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 24px; }
+  .row { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 40px; }
+  .chip { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .chip span { font-size: 11px; color: #6b6762; }
+  .icon { border-radius: 22%; overflow: hidden; flex-shrink: 0; }
+  /* Wall of icons – mix of contexts */
+  .context { display: flex; align-items: center; gap: 12px; background: #111; padding: 12px 16px; border-radius: 12px; }
+  .context.light { background: #f0f0f0; }
+  .context span { font-size: 13px; color: #888; }
+  .context.light span { color: #555; }
+  #status { font-size: 11px; color: #6b6762; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<h2>CamLog Wrapped — Icon Preview</h2>
+<div id="status">Loading…</div>
+
+<div class="row" id="sizes"></div>
+
+<h2>Context</h2>
+<div style="display:flex;flex-direction:column;gap:12px;max-width:320px">
+  <div class="context">
+    <div id="ctx-60" class="icon" style="width:60px;height:60px"></div>
+    <span>iOS home screen (60×60 @1×)</span>
+  </div>
+  <div class="context">
+    <div id="ctx-40" class="icon" style="width:40px;height:40px"></div>
+    <span>Tab / dock icon</span>
+  </div>
+  <div class="context light">
+    <div id="ctx-40l" class="icon" style="width:40px;height:40px"></div>
+    <span style="color:#555">Light background</span>
+  </div>
+</div>
+
+<script>
+const SIZES = [16, 32, 64, 120, 180, 512];
+const CTX = ['ctx-60', 'ctx-40', 'ctx-40l'];
+
+async function load() {
+  const res = await fetch('/favicon.svg?' + Date.now());
+  const svg = await res.text();
+  document.getElementById('status').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+
+  const sizesEl = document.getElementById('sizes');
+  sizesEl.innerHTML = '';
+  for (const s of SIZES) {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    const box = document.createElement('div');
+    box.className = 'icon';
+    box.style.cssText = `width:${s}px;height:${s}px`;
+    box.innerHTML = svg;
+    const svg_el = box.querySelector('svg');
+    if (svg_el) { svg_el.setAttribute('width', s); svg_el.setAttribute('height', s); }
+    const label = document.createElement('span');
+    label.textContent = s + 'px';
+    chip.appendChild(box);
+    chip.appendChild(label);
+    sizesEl.appendChild(chip);
+  }
+
+  for (const id of CTX) {
+    const el = document.getElementById(id);
+    el.innerHTML = svg;
+    const svg_el = el.querySelector('svg');
+    const w = el.offsetWidth;
+    if (svg_el) { svg_el.setAttribute('width', w); svg_el.setAttribute('height', w); }
+  }
+}
+
+load();
+setInterval(load, 800);
+</script>
+</body>
+</html>

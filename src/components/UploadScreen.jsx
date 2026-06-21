@@ -34,9 +34,9 @@ export default function UploadScreen({ onFile, loading }) {
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
           <div className="mb-10 text-center">
-            <h1 className="font-['DM_Mono'] font-bold tracking-tight text-(--c-ink) leading-tight text-4xl sm:text-5xl mb-4">
+            <h1 className="text-(--c-ink) leading-tight text-4xl sm:text-5xl mb-4" style={{fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', fontWeight: 800, letterSpacing: '-0.025em'}}>
               Cam<span className="text-(--c-accent)">Log</span>{' '}
-              <span style={wrappedTextStyle}>Wrapped</span>
+              <span style={{...wrappedTextStyle, fontFamily: "'DM Mono', monospace", fontWeight: 700, letterSpacing: 'normal'}}>Wrapped</span>
             </h1>
             <p className="text-sm text-(--c-ink2) font-['DM_Sans']">
               Your production, wrapped.

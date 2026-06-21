@@ -1,22 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <!-- Gradient matches app: #e63946 red (top) → #fbbf24 yellow → #3b82f6 blue (bottom) -->
+    <linearGradient id="cGrad" x1="96" y1="39" x2="96" y2="153" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#e63946"/>
+      <stop offset="50%"  stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
   <rect width="192" height="192" rx="42" fill="#111111"/>
 
-  <!-- Bold red C arc, opening to the right — circle center (96,96), radius 62 -->
+  <!-- Gradient C arc, opening to the right — center (103,96), shifted right 7px -->
   <path
-    d="M 142 57 A 62 62 0 1 0 142 135"
+    d="M 149 57 A 62 62 0 1 0 149 135"
     fill="none"
-    stroke="#e63946"
+    stroke="url(#cGrad)"
     stroke-width="36"
     stroke-linecap="round"
   />
 
-  <!-- W centered in the C, matching where LOG sits in CineLog -->
+  <!-- W shifted right 7px, lowered 10px from geometric center -->
   <text
-    x="96"
-    y="96"
-    font-family="'DM Mono', 'Courier New', monospace"
-    font-weight="700"
-    font-size="62"
+    x="103"
+    y="106"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-weight="900"
+    font-size="70"
     fill="#ffffff"
     text-anchor="middle"
     dominant-baseline="middle"

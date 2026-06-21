@@ -38,9 +38,9 @@ function drawIcon(id) {
   const strokeW  = s * 0.1875;
   const halfGap  = 40 * Math.PI / 180;
 
-  // Gradient: app colors red → yellow → blue, top to bottom across the arc
-  const topY    = cy - arcR - strokeW * 0.5;
-  const bottomY = cy + arcR + strokeW * 0.5;
+  // Gradient spans the arc gap endpoints (not full radius) to match the SVG favicon
+  const topY    = cy - arcR * Math.sin(halfGap) - strokeW * 0.5;
+  const bottomY = cy + arcR * Math.sin(halfGap) + strokeW * 0.5;
   const grad = ctx.createLinearGradient(cx, topY, cx, bottomY);
   grad.addColorStop(0,    '#e63946');
   grad.addColorStop(0.5,  '#fbbf24');

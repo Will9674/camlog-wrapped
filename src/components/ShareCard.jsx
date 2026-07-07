@@ -377,6 +377,13 @@ function DaysView({ perDayData, stats, portrait }) {
   const bd = stats.busiestDay
   const n = perDayData.length
 
+  // Average reference line: gives the bars a readable baseline even when per-bar
+  // counts/dates are dropped for space — you can see at a glance which days beat the
+  // average. Positioned as a % of the chart height (bars map 0..maxCount → 0..100%).
+  const avg = parseFloat(stats.avgShotsPerDay) || 0
+  const avgPct = (avg / maxCount) * 100
+  const showAvgLine = avg > 0 && avgPct >= 5 && avgPct <= 96
+
   // Portrait: tight gap so bars are wide enough for labels; square: original formula
   const gapSize = portrait
     ? Math.max(1, n <= 30 ? 3 : n <= 60 ? 2 : 1)
@@ -416,7 +423,7 @@ function DaysView({ perDayData, stats, portrait }) {
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: gapSize, minHeight: 0, overflow: portrait ? 'hidden' : 'visible' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: gapSize, minHeight: 0, overflow: portrait ? 'hidden' : 'visible', position: 'relative' }}>
           {perDayData.map((d) => {
             const pct = Math.max(2, (d.count / maxCount) * 100)
             if (showCountLabels) {
@@ -433,6 +440,14 @@ function DaysView({ perDayData, stats, portrait }) {
               <div key={d.name} style={{ flex: 1, height: `${pct}%`, background: t.accent, borderRadius: '2px 2px 0 0', minWidth: 0 }} />
             )
           })}
+          {showAvgLine && (
+            <>
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: `${avgPct}%`, borderTop: `1px dashed ${t.ink2}`, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', right: 0, bottom: `${avgPct}%`, marginBottom: 2, fontSize: portrait ? 13 : 11, lineHeight: 1, color: t.ink2, fontFamily: MONO, letterSpacing: '0.08em', background: t.bg, padding: '0 3px' }}>
+                AVG {avg.toFixed(1)}
+              </div>
+            </>
+          )}
         </div>
         {showDateLabels && (
           <div style={{ display: 'flex', gap: gapSize, flexShrink: 0, marginTop: 5 }}>

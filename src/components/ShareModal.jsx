@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { ShareCardContent } from './ShareCard'
-import { CARD_SIZE, CARD_HEIGHT_STORY } from './shareCardSize'
+import { SHARE_THEME_META, THEMES } from './shareThemes'
+import { CARD_SIZE, FORMAT_GEOMETRY } from './shareCardSize'
 
 const PREVIEW_W = 320
 
 const VIEWS = [
+  { id: 'summary', label: 'Summary' },
   { id: 'lens',    label: 'Lens Usage' },
   { id: 'support', label: 'Support' },
   { id: 'camera',  label: 'Camera' },
@@ -14,23 +16,45 @@ const VIEWS = [
 
 const FORMATS = [
   { id: 'square', label: 'Square' },
+  { id: 'feed',   label: 'Feed 4:5' },
   { id: 'story',  label: 'Story 9:16' },
 ]
 
 export default function ShareModal({ rows, stats, projectTitle, onClose }) {
-  const [activeView, setActiveView]   = useState('lens')
+  const [activeView, setActiveView]   = useState('summary')
   const [format, setFormat]           = useState('square')
+  const [theme, setTheme]             = useState('classic')
   const [exporting, setExporting]     = useState(false)
   const [exported, setExported]       = useState(false)
   const [exportError, setExportError] = useState(false)
+  const [sharing, setSharing]         = useState(false)
+  const [shared, setShared]           = useState(false)
+  const [shareError, setShareError]   = useState(false)
   // previewScale is derived from ResizeObserver on the flex-1 container,
   // so CSS layout (not JS viewport math) determines how big the preview is.
   const [previewScale, setPreviewScale] = useState(PREVIEW_W / CARD_SIZE)
   const previewAreaRef = useRef(null)
   const exportRef      = useRef(null)
+  // Cached background-rendered PNG for the current view/format/theme, so that a
+  // Share tap can hand the file to the OS immediately — inside the tap's user-
+  // activation window — instead of awaiting a ~500ms render and losing the gesture.
+  const pngRef       = useRef({ key: null, blob: null, file: null })
+  // The in-flight render, if any: { key, promise }. Concurrent callers for the same
+  // key share this promise; a caller for a different key waits behind it (there is a
+  // single shared export node, so renders must not overlap).
+  const inFlightRef  = useRef(null)
 
-  const portrait   = format === 'story'
-  const cardH      = portrait ? CARD_HEIGHT_STORY : CARD_SIZE
+  // Whether this browser can share files (iOS Safari / Android Chrome). Desktop
+  // browsers generally can't, so they fall back to the download button.
+  const canShareFiles = useMemo(() => {
+    try {
+      const probe = new File([''], 'x.png', { type: 'image/png' })
+      return !!navigator.canShare && navigator.canShare({ files: [probe] })
+    } catch { return false }
+  }, [])
+
+  const geo        = FORMAT_GEOMETRY[format] || FORMAT_GEOMETRY.square
+  const cardH      = geo.height
   const pixelRatio = 3
 
   // Measure the flex-1 preview area and compute scale to fill it.
@@ -47,54 +71,143 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
       prevW = width
 
       const scaleW = Math.min(width, PREVIEW_W) / CARD_SIZE
-      const scaleH = portrait ? height / CARD_HEIGHT_STORY : height / CARD_SIZE
+      const scaleH = height / cardH
       setPreviewScale(Math.min(scaleW, scaleH))
     })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [portrait])
+  }, [cardH])
 
   const scale          = previewScale
   const effectivePreviewW = Math.round(scale * CARD_SIZE)
   const previewH          = Math.round(scale * cardH)
 
-  async function handleExport() {
+  const cfgKey   = `${activeView}|${format}|${theme}`
+  const filename = `${projectTitle || 'CamLog-Wrapped'}-${activeView}-${format}-${theme}.png`
+
+  // Renders the export node to a PNG File. The node is kept in-viewport (html-to-image
+  // stalls indefinitely on elements positioned far off-screen) but fully transparent via
+  // an opacity:0 wrapper, so it never flashes. Double toPng: the first warms font/image
+  // inlining, the second is the real capture.
+  //
+  // Concurrent callers are coalesced by config key: a Save/Share tap during an in-flight
+  // background pre-render reuses that render's promise instead of erroring — so the user
+  // never sees a spurious "failed" while a render is already on the way. A caller for a
+  // different key waits behind the current one (single shared export node → no overlap).
+  async function renderPng() {
     const el = exportRef.current
-    if (!el || exporting) return
-    setExporting(true)
-    el.style.position = 'fixed'
-    el.style.left = '0'
-    el.style.top = '0'
-    el.style.visibility = 'visible'
-    el.style.zIndex = '9999'
-    try {
-      await new Promise((r) => setTimeout(r, 300))
+    if (!el) return null
+    const key = cfgKey
+    const name = filename
+
+    while (inFlightRef.current) {
+      if (inFlightRef.current.key === key) return inFlightRef.current.promise
+      try { await inFlightRef.current.promise } catch { /* ignore a prior render's failure */ }
+    }
+
+    const promise = (async () => {
       const { toPng } = await import('html-to-image')
-      await toPng(el, { pixelRatio })
-      const dataUrl = await toPng(el, { pixelRatio })
-      const a = document.createElement('a')
-      a.href = dataUrl
-      a.download = `${projectTitle || 'CamLog-Wrapped'}-${activeView}-${format}.png`
-      a.click()
+      const render = async () => {
+        await toPng(el, { pixelRatio })          // warm-up pass (font/image inlining)
+        return toPng(el, { pixelRatio })         // real capture
+      }
+      // Guard against a stuck render so the button never hangs on "Saving…".
+      const dataUrl = await Promise.race([
+        render(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('render timeout')), 15000)),
+      ])
+      const blob = await (await fetch(dataUrl)).blob()
+      return { blob, file: new File([blob], name, { type: 'image/png' }) }
+    })()
+    inFlightRef.current = { key, promise }
+    try {
+      return await promise
+    } finally {
+      if (inFlightRef.current?.promise === promise) inFlightRef.current = null
+    }
+  }
+
+  // Returns the cached PNG if it matches the current selection, else renders one.
+  async function getPng() {
+    if (pngRef.current.key === cfgKey && pngRef.current.file) return pngRef.current
+    const out = await renderPng()
+    if (out) pngRef.current = { key: cfgKey, ...out }
+    return out
+  }
+
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
+  }
+
+  async function handleExport() {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const out = await getPng()
+      if (!out) throw new Error('render failed')
+      downloadBlob(out.blob, out.file.name)
       setExported(true)
       setTimeout(() => setExported(false), 2500)
     } catch {
       setExportError(true)
       setTimeout(() => setExportError(false), 2500)
     } finally {
-      el.style.position = 'fixed'
-      el.style.left = '-9999px'
-      el.style.visibility = 'hidden'
-      el.style.zIndex = '-1'
       setExporting(false)
     }
   }
+
+  async function handleShare() {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const out = await getPng()
+      if (!out) throw new Error('render failed')
+      try {
+        await navigator.share({ files: [out.file], title: projectTitle || 'CamLog Wrapped' })
+        setShared(true)
+        setTimeout(() => setShared(false), 2500)
+      } catch (err) {
+        if (err?.name === 'AbortError') return       // user dismissed the share sheet
+        downloadBlob(out.blob, out.file.name)         // activation lost / unsupported → save instead
+      }
+    } catch {
+      setShareError(true)
+      setTimeout(() => setShareError(false), 2500)
+    } finally {
+      setSharing(false)
+    }
+  }
+
+  // Background pre-render: once the user settles on a view/format/theme, render the
+  // PNG ahead of time so the next Share/Save is instant (and Share stays inside the
+  // tap's activation window). Debounced so rapid toggling doesn't thrash; the cache
+  // is invalidated immediately on any change.
+  //
+  // Only pre-render where it pays off: keeping the file ready matters for the share-sheet
+  // activation window (mobile). Desktop only downloads — there's no activation constraint —
+  // so it renders on demand at Save time instead of burning cycles on every picker change.
+  useEffect(() => {
+    if (!canShareFiles) return
+    pngRef.current = { key: null, blob: null, file: null }
+    const id = setTimeout(async () => {
+      const out = await renderPng()
+      if (out) pngRef.current = { key: cfgKey, ...out }
+    }, 450)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, format, theme, rows, canShareFiles])
 
   const btnBase     = "px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors"
   const btnActive   = 'bg-(--c-accent) text-white border-transparent'
   const btnInactive = 'bg-transparent text-(--c-nav-fg) border-(--c-border) hover:text-(--c-nav-fg-hover) hover:border-(--c-border-strong)'
 
-  const exportLabel = portrait ? 'Save PNG  1800 × 3200' : 'Save PNG  1800 × 1800'
+  // Exported pixels = CARD_SIZE × pixelRatio (1800 wide) by the card's height.
+  const exportLabel = `Save PNG  ${CARD_SIZE * pixelRatio} × ${cardH * pixelRatio}`
 
   return (
     <>
@@ -147,9 +260,38 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
                   rows={rows}
                   stats={stats}
                   projectTitle={projectTitle}
-                  portrait={portrait}
+                  format={format}
+                  theme={theme}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Theme picker — swatch shows the canvas color + accent gradient */}
+          <div className="px-5 pb-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              {SHARE_THEME_META.map((th) => {
+                const t = THEMES[th.id]
+                const selected = theme === th.id
+                return (
+                  <button
+                    key={th.id}
+                    onClick={() => setTheme(th.id)}
+                    title={th.label}
+                    aria-label={th.label}
+                    aria-pressed={selected}
+                    className="w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+                    style={{
+                      background: t.bg,
+                      boxShadow: selected
+                        ? '0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-ink)'
+                        : '0 0 0 1px var(--c-border-strong)',
+                    }}
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full block" style={{ background: t.gradient }} />
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -168,38 +310,69 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
             </div>
           </div>
 
-          {/* Save button — always visible */}
+          {/* Share / Save — native share sheet on capable devices, download otherwise */}
           <div className="px-5 pb-3 pt-1.5 border-t border-(--c-border) flex-shrink-0">
-            <button
-              onClick={handleExport}
-              disabled={exporting}
-              className={`w-full h-10 rounded-xl text-sm font-['DM_Mono'] font-medium transition-colors ${
-                exportError
-                  ? 'bg-(--c-accent)/20 text-(--c-accent)'
-                  : exported
-                  ? 'bg-(--c-accent)/20 text-(--c-accent)'
-                  : 'bg-(--c-accent) text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-default'
-              }`}
-            >
-              {exporting ? 'Saving…' : exportError ? 'Export failed' : exported ? 'Saved!' : exportLabel}
-            </button>
+            {canShareFiles ? (
+              <>
+                <button
+                  onClick={handleShare}
+                  disabled={sharing}
+                  className={`w-full h-10 rounded-xl text-sm font-['DM_Mono'] font-medium transition-colors flex items-center justify-center gap-2 ${
+                    shareError || shared
+                      ? 'bg-(--c-accent)/20 text-(--c-accent)'
+                      : 'bg-(--c-accent) text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-default'
+                  }`}
+                >
+                  {sharing ? 'Preparing…' : shareError ? 'Share failed' : shared ? 'Shared!' : (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
+                        <polyline points="16 6 12 2 8 6"/>
+                        <line x1="12" y1="2" x2="12" y2="15"/>
+                      </svg>
+                      Share
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleExport}
+                  disabled={exporting}
+                  className="w-full mt-2 h-8 rounded-lg text-xs font-['DM_Mono'] text-(--c-ink2) hover:text-(--c-ink) transition-colors disabled:opacity-50"
+                >
+                  {exporting ? 'Saving…' : exportError ? 'Save failed' : exported ? 'Saved to device!' : 'Save to device'}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className={`w-full h-10 rounded-xl text-sm font-['DM_Mono'] font-medium transition-colors ${
+                  exportError || exported
+                    ? 'bg-(--c-accent)/20 text-(--c-accent)'
+                    : 'bg-(--c-accent) text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-default'
+                }`}
+              >
+                {exporting ? 'Saving…' : exportError ? 'Export failed' : exported ? 'Saved!' : exportLabel}
+              </button>
+            )}
           </div>
 
         </div>
       </div>
 
-      {/* Off-screen export target */}
-      <div
-        ref={exportRef}
-        style={{ position: 'fixed', left: -9999, top: 0, visibility: 'hidden', zIndex: -1 }}
-      >
-        <ShareCardContent
-          viewId={activeView}
-          rows={rows}
-          stats={stats}
-          projectTitle={projectTitle}
-          portrait={portrait}
-        />
+      {/* Export target — kept in-viewport (html-to-image stalls on elements far off-screen)
+          but fully transparent via opacity:0 so it never flashes on screen. */}
+      <div aria-hidden style={{ position: 'fixed', left: 0, top: 0, opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
+        <div ref={exportRef}>
+          <ShareCardContent
+            viewId={activeView}
+            rows={rows}
+            stats={stats}
+            projectTitle={projectTitle}
+            format={format}
+            theme={theme}
+          />
+        </div>
       </div>
     </>
   )

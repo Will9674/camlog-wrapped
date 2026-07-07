@@ -9,6 +9,7 @@ import FiltersView from '../views/FiltersView'
 import CameraView from '../views/CameraView'
 import { ThemeToggleButton } from '../ThemeContext.jsx'
 import { filterRows, summaryStats, getDateRange, getCamerasInData } from '../utils/stats'
+import { fmtDate } from '../utils/format'
 
 const VIEWS = [
   { id: 'lens', label: 'Lens Usage' },
@@ -122,6 +123,24 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
 
   const filteredRows = useMemo(() => filterRows(rows, filters), [rows, filters])
   const stats = useMemo(() => summaryStats(rows, filters), [rows, filters])
+
+  // Human-readable description of any active filter, for the PDF header — null when
+  // showing the full project, so a filtered export is never mistaken for the whole.
+  const filterContext = useMemo(() => {
+    const parts = []
+    const cams = filters.cameras
+    if (cams && cams.length && !cams.includes('All')) {
+      parts.push((cams.length === 1 ? 'Camera ' : 'Cameras ') + cams.join(', '))
+    }
+    const [d0, d1] = filters.dateRange || []
+    if (d0 && d1 && (d0 !== dateMin || d1 !== dateMax)) {
+      const a = fmtDate(d0), b = fmtDate(d1)
+      parts.push(a.year === b.year
+        ? `${a.label} – ${b.label}, ${a.year}`
+        : `${a.label}, ${a.year} – ${b.label}, ${b.year}`)
+    }
+    return parts.length ? parts.join(' · ') : null
+  }, [filters, dateMin, dateMax])
 
   const ViewComponent = {
     lens: LensView,
@@ -284,7 +303,7 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
         </main>
       </div>
     </div>
-    <PrintLayout ref={printRef} rows={filteredRows} stats={stats} projectTitle={projectTitle} />
+    <PrintLayout ref={printRef} rows={filteredRows} stats={stats} projectTitle={projectTitle} filterContext={filterContext} />
     {shareOpen && (
       <ShareModal
         rows={filteredRows}

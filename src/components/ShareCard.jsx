@@ -1,63 +1,42 @@
-import { useMemo, useRef, useState, useLayoutEffect } from 'react'
+import { useMemo, useRef, useState, useLayoutEffect, createContext, useContext } from 'react'
 import {
   lensUsage, supportUsage, cameraUsage, filterUsage,
   takesPerDay, deduplicateShots, getCameraColorByIndex,
 } from '../utils/stats'
 import { fmtDate } from '../utils/format'
-import { CARD_SIZE, CARD_HEIGHT_STORY } from './shareCardSize'
+import { CARD_SIZE, FORMAT_GEOMETRY } from './shareCardSize'
+import { MONO, buildTheme } from './shareThemes'
 
-const GRADIENT = 'linear-gradient(135deg, #3b82f6 0%, #e63946 50%, #fbbf24 100%)'
-// Extra top padding in portrait to clear the Instagram story handle/avatar overlay
-const STORY_TOP_PAD = 140
-
-const c = {
-  bg: '#111111',
-  surface2: '#2a2a2c',
-  accent: '#e63946',
-  ink: '#f2f2f7',
-  ink2: '#8e8e93',
-  ink3: '#3a3a3c',
-  mono: 'DM Mono, monospace',
-}
-
-const gradientText = {
-  background: GRADIENT,
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text',
-}
-
-const viewLabel = {
-  fontSize: 13,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: '#e63946',
-  fontFamily: 'DM Mono, monospace',
-}
+const CardThemeContext = createContext(buildTheme('classic'))
+const useT = () => useContext(CardThemeContext)
 
 function ProjectTitle({ projectTitle, portrait }) {
+  const t = useT()
   return (
-    <div style={{ fontSize: portrait ? 42 : 36, fontWeight: 700, color: c.ink, fontFamily: c.mono, letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.15, flexShrink: 0 }}>
+    <div style={{ fontSize: portrait ? 42 : 36, fontWeight: 700, color: t.ink, fontFamily: MONO, letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.15, flexShrink: 0 }}>
       {projectTitle || 'CamLog Wrapped'}
     </div>
   )
 }
 
-function CardFooter() {
+function CardFooter({ portrait = false }) {
+  const t = useT()
+  const markSz = portrait ? 16 : 13
+  const urlSz  = portrait ? 19 : 15
   return (
-    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: portrait ? 12 : 10 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 13, fontWeight: 800, fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', letterSpacing: '-0.025em' }}>
-          <span style={{ color: '#ffffff' }}>Cam</span>
-          <span style={{ color: c.accent }}>Log</span>
+        <div style={{ fontSize: markSz, fontWeight: 800, fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', letterSpacing: '-0.025em' }}>
+          <span style={{ color: t.ink }}>Cam</span>
+          <span style={{ color: t.accent }}>Log</span>
           {' '}
-          <span style={{ ...gradientText, display: 'inline-block', fontFamily: c.mono, fontWeight: 700, letterSpacing: 'normal' }}>Wrapped</span>
+          <span style={{ ...t.gradientText, display: 'inline-block', fontFamily: MONO, fontWeight: 700, letterSpacing: 'normal' }}>Wrapped</span>
         </div>
-        <div style={{ fontSize: 13, color: c.ink2, fontFamily: c.mono, letterSpacing: '0.06em' }}>
+        <div style={{ fontSize: urlSz, fontWeight: 500, color: t.accent, fontFamily: MONO, letterSpacing: '0.04em' }}>
           camlog.app
         </div>
       </div>
-      <div style={{ height: 8, background: GRADIENT, borderRadius: 0 }} />
+      <div style={{ height: portrait ? 10 : 8, background: t.gradient, borderRadius: 0 }} />
     </div>
   )
 }
@@ -166,7 +145,7 @@ function FitText({ text, maxSize, weight = 700, style }) {
 
   return (
     <div ref={boxRef} style={{ minWidth: 0 }}>
-      <div style={{ ...style, fontSize: size, fontWeight: weight, fontFamily: c.mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ ...style, fontSize: size, fontWeight: weight, fontFamily: MONO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {display}
       </div>
     </div>
@@ -189,23 +168,24 @@ function pctFontSize(pctStr, portrait) {
 // ── Shared hero for Lens / Support / Filters ─────────────────────────────────
 
 function HeroContent({ label, name, pct, count, portrait = false }) {
+  const t = useT()
   const pctStr  = pct.toFixed(1) + '%'
   const pctSz   = pctFontSize(pctStr, portrait)
 
   if (portrait) {
     return (
       <div style={{ flexShrink: 0 }}>
-        <div style={{ ...viewLabel, fontSize: 30, letterSpacing: '0.08em', marginBottom: 20 }}>{label}</div>
+        <div style={{ ...t.viewLabel, fontSize: 30, letterSpacing: '0.08em', marginBottom: 20 }}>{label}</div>
         <FitText
           text={name}
           maxSize={130}
-          style={{ color: c.ink, lineHeight: 1, marginBottom: 20 }}
+          style={{ color: t.ink, lineHeight: 1, marginBottom: 20 }}
         />
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, marginBottom: 14 }}>
-          <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: c.mono, lineHeight: 1, ...gradientText, display: 'block' }}>
+          <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: MONO, lineHeight: 1, ...t.gradientText, display: 'block' }}>
             {pctStr}
           </div>
-          <div style={{ fontSize: 22, color: c.ink2, fontFamily: c.mono, lineHeight: 1, paddingBottom: 6 }}>
+          <div style={{ fontSize: 22, color: t.ink2, fontFamily: MONO, lineHeight: 1, paddingBottom: 6 }}>
             {count} {count === 1 ? 'Shot' : 'Shots'}
           </div>
         </div>
@@ -216,20 +196,20 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
   // Square: big name left (wraps if needed), pct + shot count stacked right
   return (
     <div style={{ flexShrink: 0 }}>
-      <div style={{ ...viewLabel, fontSize: 24, letterSpacing: '0.10em', marginBottom: 14 }}>{label}</div>
+      <div style={{ ...t.viewLabel, fontSize: 24, letterSpacing: '0.10em', marginBottom: 14 }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <FitText
             text={name}
             maxSize={100}
-            style={{ color: c.ink, lineHeight: 1.1 }}
+            style={{ color: t.ink, lineHeight: 1.1 }}
           />
         </div>
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: 4 }}>
-          <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: c.mono, lineHeight: 1.1, ...gradientText, display: 'block' }}>
+          <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: MONO, lineHeight: 1.1, ...t.gradientText, display: 'block' }}>
             {pctStr}
           </div>
-          <div style={{ fontSize: 18, color: c.ink2, fontFamily: c.mono, marginTop: 6 }}>
+          <div style={{ fontSize: 18, color: t.ink2, fontFamily: MONO, marginTop: 6 }}>
             {count} {count === 1 ? 'Shot' : 'Shots'}
           </div>
         </div>
@@ -241,6 +221,7 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
 // ── Bar list ──────────────────────────────────────────────────────────────────
 
 function BarList({ data, topN = 5, portrait = false }) {
+  const t = useT()
   const shown   = data.slice(0, topN)
   const maxPct  = shown[0]?.pct || 1
   const barH    = portrait ? 14 : 9
@@ -256,13 +237,13 @@ function BarList({ data, topN = 5, portrait = false }) {
         <div key={d.name}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 5 }}>
             {/* Name flexes and truncates with … ; the value column never shrinks or wraps */}
-            <span style={{ fontSize: labelSz, color: c.ink2, fontFamily: c.mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{d.name}</span>
-            <span style={{ fontSize: labelSz, color: c.ink2, fontFamily: c.mono, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span style={{ fontSize: labelSz, color: t.ink2, fontFamily: MONO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{d.name}</span>
+            <span style={{ fontSize: labelSz, color: t.ink2, fontFamily: MONO, whiteSpace: 'nowrap', flexShrink: 0 }}>
               {d.pct.toFixed(1)}%  ·  {d.count} {d.count === 1 ? 'Shot' : 'Shots'}
             </span>
           </div>
-          <div style={{ height: barH, background: c.surface2, borderRadius: 4 }}>
-            <div style={{ height: '100%', width: `${Math.max(0.5, (d.pct / maxPct) * 100)}%`, background: c.accent, borderRadius: 4 }} />
+          <div style={{ height: barH, background: t.surface2, borderRadius: 4 }}>
+            <div style={{ height: '100%', width: `${Math.max(0.5, (d.pct / maxPct) * 100)}%`, background: t.accent, borderRadius: 4 }} />
           </div>
         </div>
       ))}
@@ -271,16 +252,17 @@ function BarList({ data, topN = 5, portrait = false }) {
 }
 
 function HeroStat({ label, value, sub, subSize = 11, gradient = false, valueSz = 36, labelSz = 13 }) {
+  const t = useT()
   return (
     <div>
-      <div style={{ ...viewLabel, fontSize: labelSz, marginBottom: 6 }}>
+      <div style={{ ...t.viewLabel, fontSize: labelSz, marginBottom: 6 }}>
         {label}
       </div>
-      <div style={{ fontSize: valueSz, fontWeight: 700, fontFamily: c.mono, lineHeight: 1, whiteSpace: 'nowrap', ...(gradient ? { ...gradientText, display: 'block' } : { color: c.ink }) }}>
+      <div style={{ fontSize: valueSz, fontWeight: 700, fontFamily: MONO, lineHeight: 1, whiteSpace: 'nowrap', ...(gradient ? { ...t.gradientText, display: 'block' } : { color: t.ink }) }}>
         {value}
       </div>
       {sub && (
-        <div style={{ fontSize: subSize, fontWeight: subSize > 16 ? 600 : 400, color: c.ink2, fontFamily: c.mono, marginTop: 4 }}>
+        <div style={{ fontSize: subSize, fontWeight: subSize > 16 ? 600 : 400, color: t.ink2, fontFamily: MONO, marginTop: 4 }}>
           {sub}
         </div>
       )}
@@ -290,27 +272,27 @@ function HeroStat({ label, value, sub, subSize = 11, gradient = false, valueSz =
 
 // ── View-specific layouts ─────────────────────────────────────────────────────
 
-function LensView({ lensData, portrait }) {
+function LensView({ lensData, portrait, listRows }) {
   if (!lensData.data.length) return <EmptyCard label="No lens data recorded" />
   const top = lensData.data[0]
   return (
     <>
       <HeroContent label="Your #1 Lens" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
-        <BarList data={lensData.data} topN={portrait ? 9 : 5} portrait={portrait} />
+        <BarList data={lensData.data} topN={listRows} portrait={portrait} />
       </div>
     </>
   )
 }
 
-function SupportView({ suppData, portrait }) {
+function SupportView({ suppData, portrait, listRows }) {
   if (!suppData.length) return <EmptyCard label="No support data recorded" />
   const top = suppData[0]
   return (
     <>
       <HeroContent label="Mostly Shot" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
-        <BarList data={suppData} topN={portrait ? 9 : 5} portrait={portrait} />
+        <BarList data={suppData} topN={listRows} portrait={portrait} />
       </div>
     </>
   )
@@ -340,11 +322,11 @@ function cameraRowSizing(n, portrait) {
   return { pctSz, rowGap: MIN_GAP }
 }
 
-function CameraView({ camData, portrait }) {
+function CameraView({ camData, portrait, camRows }) {
+  const t = useT()
   if (!camData.length) return <EmptyCard label="No camera data recorded" />
 
-  const MAX_N  = portrait ? 12 : 8
-  const shown  = camData.slice(0, MAX_N)
+  const shown  = camData.slice(0, camRows)
 
   const effectiveN = shown.length
   const { pctSz, rowGap } = cameraRowSizing(effectiveN, portrait)
@@ -364,7 +346,7 @@ function CameraView({ camData, portrait }) {
 
   return (
     <>
-      <div style={{ ...viewLabel, fontSize: labelSz, letterSpacing: labelSpacing, flexShrink: 0 }}>Camera Breakdown</div>
+      <div style={{ ...t.viewLabel, fontSize: labelSz, letterSpacing: labelSpacing, flexShrink: 0 }}>Camera Breakdown</div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: portrait ? 14 : 10, minHeight: 0 }}>
         <div style={{ display: 'flex', height: barH, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
           {camData.map((cam, i) => (
@@ -375,11 +357,11 @@ function CameraView({ camData, portrait }) {
           {shown.map((cam, i) => (
             <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
               <div style={{ width: swatchSz, height: swatchSz, borderRadius: 4, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
-              <span style={{ fontFamily: c.mono, fontSize: nameSz, color: c.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <span style={{ fontFamily: MONO, fontSize: nameSz, color: t.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {cam.model ? `${cam.name} · ${cam.model}` : `${cam.name} CAMERA`}
               </span>
-              <span style={{ fontFamily: c.mono, fontSize: pctSz, fontWeight: 600, color: c.ink }}>{cam.pct.toFixed(1)}%</span>
-              <span style={{ fontFamily: c.mono, fontSize: countSz, color: c.ink2, width: countW, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
+              <span style={{ fontFamily: MONO, fontSize: pctSz, fontWeight: 600, color: t.ink }}>{cam.pct.toFixed(1)}%</span>
+              <span style={{ fontFamily: MONO, fontSize: countSz, color: t.ink2, width: countW, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
             </div>
           ))}
         </div>
@@ -389,6 +371,7 @@ function CameraView({ camData, portrait }) {
 }
 
 function DaysView({ perDayData, stats, portrait }) {
+  const t = useT()
   const maxCount = Math.max(...perDayData.map((d) => d.count), 1)
   const bd = stats.busiestDay
   const n = perDayData.length
@@ -438,34 +421,34 @@ function DaysView({ perDayData, stats, portrait }) {
             if (showCountLabels) {
               return (
                 <div key={d.name} style={{ flex: 1, minWidth: 0, height: `${pct}%`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontSize: countLabelSz, color: c.ink2, fontFamily: c.mono, lineHeight: 1, overflow: 'hidden', width: '100%', textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ fontSize: countLabelSz, color: t.ink2, fontFamily: MONO, lineHeight: 1, overflow: 'hidden', width: '100%', textAlign: 'center', flexShrink: 0 }}>
                     {d.count}
                   </div>
-                  <div style={{ flex: 1, width: '100%', background: c.accent, borderRadius: '2px 2px 0 0' }} />
+                  <div style={{ flex: 1, width: '100%', background: t.accent, borderRadius: '2px 2px 0 0' }} />
                 </div>
               )
             }
             return (
-              <div key={d.name} style={{ flex: 1, height: `${pct}%`, background: c.accent, borderRadius: '2px 2px 0 0', minWidth: 0 }} />
+              <div key={d.name} style={{ flex: 1, height: `${pct}%`, background: t.accent, borderRadius: '2px 2px 0 0', minWidth: 0 }} />
             )
           })}
         </div>
         {showDateLabels && (
           <div style={{ display: 'flex', gap: gapSize, flexShrink: 0, marginTop: 5 }}>
             {perDayData.map((d) => (
-              <div key={d.name} style={{ flex: 1, minWidth: 0, textAlign: 'center', fontSize: 9, color: c.ink2, fontFamily: c.mono, overflow: 'hidden', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+              <div key={d.name} style={{ flex: 1, minWidth: 0, textAlign: 'center', fontSize: 9, color: t.ink2, fontFamily: MONO, overflow: 'hidden', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
                 {formatDate(d.name)}
               </div>
             ))}
           </div>
         )}
         {portrait && !showDateLabels && (
-          <div style={{ textAlign: 'center', fontSize: 16, color: c.ink, fontFamily: c.mono, letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 10, flexShrink: 0 }}>
+          <div style={{ textAlign: 'center', fontSize: 16, color: t.ink, fontFamily: MONO, letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 10, flexShrink: 0 }}>
             Shots Per Day
           </div>
         )}
         {!portrait && (
-          <div style={{ textAlign: 'center', fontSize: 13, color: c.ink, fontFamily: c.mono, letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 10, flexShrink: 0 }}>
+          <div style={{ textAlign: 'center', fontSize: 13, color: t.ink, fontFamily: MONO, letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 10, flexShrink: 0 }}>
             Shots Per Day
           </div>
         )}
@@ -474,22 +457,113 @@ function DaysView({ perDayData, stats, portrait }) {
   )
 }
 
-function FiltersView({ filtrData, portrait }) {
+function FiltersView({ filtrData, portrait, listRows }) {
   if (!filtrData.length) return <EmptyCard label="No filter data recorded" />
   const top = filtrData[0]
   return (
     <>
       <HeroContent label="Top Filter" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
-        <BarList data={filtrData} topN={portrait ? 9 : 5} portrait={portrait} />
+        <BarList data={filtrData} topN={listRows} portrait={portrait} />
+      </div>
+    </>
+  )
+}
+
+// ── Summary: the winners of every view on one card ────────────────────────────
+
+// A single "winner" line: small label, big truncating name, gradient pct on the right.
+function WinnerRow({ label, name, pct, portrait }) {
+  const t = useT()
+  const nameSz  = portrait ? 40 : 27
+  const pctSz   = portrait ? 40 : 27
+  const labelSz = portrait ? 19 : 13
+  return (
+    <div>
+      <div style={{ ...t.viewLabel, fontSize: labelSz, letterSpacing: '0.10em', marginBottom: portrait ? 8 : 5 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16 }}>
+        <span style={{ fontFamily: MONO, fontSize: nameSz, fontWeight: 700, color: t.ink, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{name}</span>
+        <span style={{ fontFamily: MONO, fontSize: pctSz, fontWeight: 700, lineHeight: 1.1, ...t.gradientText, display: 'block', flexShrink: 0 }}>{pct.toFixed(1)}%</span>
+      </div>
+    </div>
+  )
+}
+
+// Compact camera bar + legend for the summary card.
+function CameraStrip({ camData, portrait }) {
+  const t = useT()
+  const legend = camData.slice(0, portrait ? 5 : 4)
+  return (
+    <div style={{ flexShrink: 0 }}>
+      <div style={{ ...t.viewLabel, fontSize: portrait ? 19 : 13, letterSpacing: '0.10em', marginBottom: portrait ? 12 : 9 }}>Cameras</div>
+      <div style={{ display: 'flex', height: portrait ? 26 : 18, borderRadius: 5, overflow: 'hidden', marginBottom: portrait ? 14 : 10 }}>
+        {camData.map((cam, i) => (
+          <div key={cam.name} style={{ width: `${cam.pct}%`, background: getCameraColorByIndex(cam.name, i), minWidth: cam.pct > 0 ? 2 : 0 }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: portrait ? '10px 24px' : '6px 16px' }}>
+        {legend.map((cam, i) => (
+          <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <div style={{ width: portrait ? 13 : 10, height: portrait ? 13 : 10, borderRadius: 3, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
+            <span style={{ fontFamily: MONO, fontSize: portrait ? 18 : 13, color: t.ink2, whiteSpace: 'nowrap' }}>
+              {cam.name} · {cam.pct.toFixed(1)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }) {
+  const lens = lensData.data[0]
+  const supp = suppData[0]
+  const filt = filtrData[0]
+
+  const winners = [
+    lens && { key: 'lens',   label: 'Top Lens',      name: lens.name, pct: lens.pct },
+    supp && { key: 'supp',   label: 'Most Shot On',  name: supp.name, pct: supp.pct },
+    filt && { key: 'filter', label: 'Top Filter',    name: filt.name, pct: filt.pct },
+  ].filter(Boolean)
+
+  const statSz      = portrait ? 46 : 34
+  const statLabelSz = portrait ? 15 : 12
+  const bd = stats.busiestDay
+
+  return (
+    <>
+      {/* Headline numbers */}
+      <div style={{ display: 'flex', gap: portrait ? 20 : 14, flexShrink: 0 }}>
+        <HeroStat label="Total Shots"   value={stats.totalShots}   valueSz={statSz} labelSz={statLabelSz} />
+        <HeroStat label="Shooting Days" value={stats.shootingDays} valueSz={statSz} labelSz={statLabelSz} />
+        {bd && (
+          <HeroStat
+            label="Busiest Day"
+            value={fmtDate(bd.date).label}
+            sub={`${bd.count} ${bd.count === 1 ? 'Shot' : 'Shots'}`}
+            subSize={portrait ? 20 : 15}
+            valueSz={statSz}
+            labelSz={statLabelSz}
+          />
+        )}
+      </div>
+
+      {camData.length > 0 && <CameraStrip camData={camData} portrait={portrait} />}
+
+      {/* Winners — flex fills remaining height, rows spread evenly */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', minHeight: 0, gap: portrait ? 0 : 12 }}>
+        {winners.map((w) => (
+          <WinnerRow key={w.key} label={w.label} name={w.name} pct={w.pct} portrait={portrait} />
+        ))}
       </div>
     </>
   )
 }
 
 function EmptyCard({ label }) {
+  const t = useT()
   return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.ink3, fontFamily: c.mono, fontSize: 13 }}>
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.ink3, fontFamily: MONO, fontSize: 13 }}>
       {label}
     </div>
   )
@@ -497,7 +571,10 @@ function EmptyCard({ label }) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function ShareCardContent({ viewId, rows, stats, projectTitle, portrait = false }) {
+export function ShareCardContent({ viewId, rows, stats, projectTitle, format = 'square', theme = 'classic' }) {
+  const geo = FORMAT_GEOMETRY[format] || FORMAT_GEOMETRY.square
+  const portrait = geo.tall   // feed + story share the tall layout; square is compact
+  const t = useMemo(() => buildTheme(theme), [theme])
   const shotsRows  = useMemo(() => deduplicateShots(rows), [rows])
   const lensData   = useMemo(() => lensUsage(shotsRows), [shotsRows])
   const suppData   = useMemo(() => supportUsage(shotsRows), [shotsRows])
@@ -506,32 +583,35 @@ export function ShareCardContent({ viewId, rows, stats, projectTitle, portrait =
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
   const views = {
-    lens:    <LensView lensData={lensData} portrait={portrait} />,
-    support: <SupportView suppData={suppData} portrait={portrait} />,
-    camera:  <CameraView camData={camData} portrait={portrait} />,
+    summary: <SummaryView lensData={lensData} suppData={suppData} camData={camData} filtrData={filtrData} stats={stats} portrait={portrait} />,
+    lens:    <LensView lensData={lensData} portrait={portrait} listRows={geo.listRows} />,
+    support: <SupportView suppData={suppData} portrait={portrait} listRows={geo.listRows} />,
+    camera:  <CameraView camData={camData} portrait={portrait} camRows={geo.camRows} />,
     days:    <DaysView perDayData={perDayData} stats={stats} portrait={portrait} />,
-    filters: <FiltersView filtrData={filtrData} portrait={portrait} />,
+    filters: <FiltersView filtrData={filtrData} portrait={portrait} listRows={geo.listRows} />,
   }
 
   return (
-    <div style={{
-      width: CARD_SIZE,
-      height: portrait ? CARD_HEIGHT_STORY : CARD_SIZE,
-      background: c.bg,
-      paddingTop: portrait ? STORY_TOP_PAD : 40,
-      paddingRight: portrait ? 48 : 20,
-      paddingBottom: portrait ? 20 : 40,
-      paddingLeft: portrait ? 48 : 20,
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: portrait ? 28 : 22,
-      fontFamily: c.mono,
-      overflow: 'hidden',
-    }}>
-      <ProjectTitle projectTitle={projectTitle} portrait={portrait} />
-      {views[viewId] ?? views.lens}
-      <CardFooter />
-    </div>
+    <CardThemeContext.Provider value={t}>
+      <div style={{
+        width: CARD_SIZE,
+        height: geo.height,
+        background: t.bg,
+        paddingTop: geo.topPad,
+        paddingRight: portrait ? 48 : 20,
+        paddingBottom: format === 'story' ? 20 : 40,
+        paddingLeft: portrait ? 48 : 20,
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: portrait ? 28 : 22,
+        fontFamily: MONO,
+        overflow: 'hidden',
+      }}>
+        <ProjectTitle projectTitle={projectTitle} portrait={portrait} />
+        {views[viewId] ?? views.summary}
+        <CardFooter portrait={portrait} />
+      </div>
+    </CardThemeContext.Provider>
   )
 }

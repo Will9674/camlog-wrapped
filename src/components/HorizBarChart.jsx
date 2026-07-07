@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,8 +11,32 @@ import {
 } from 'recharts'
 import { useTheme } from '../theme-context'
 import { useContainerWidth } from '../hooks/useContainerWidth'
+import { splitLowValue } from '../utils/stats'
 
 const pl = (n, plural) => `${n} ${n === 1 ? plural.replace(/s$/, '') : plural}`
+
+// Toggle row shown below the chart when a low-value tail is collapsed.
+function CollapseToggle({ expanded, onToggle, hidden, hiddenPct, hiddenCount, countLabel }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="mt-4 w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-(--c-border) text-(--c-ink2) hover:text-(--c-ink) hover:border-(--c-border-strong) hover:bg-(--c-nav-hover-bg) transition-colors font-['DM_Mono'] text-xs"
+      aria-expanded={expanded}
+    >
+      <span className="font-medium">{expanded ? 'Show fewer' : `+${hidden.length} more`}</span>
+      <span className="flex items-center gap-2.5">
+        {!expanded && <span className="text-(--c-accent) font-medium">{hiddenPct.toFixed(1)}%  ·  {pl(hiddenCount, countLabel)}</span>}
+        <svg
+          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </span>
+    </button>
+  )
+}
 
 const CustomTooltip = ({ active, payload, label, countLabel }) => {
   if (!active || !payload?.length) return null
@@ -23,10 +48,28 @@ const CustomTooltip = ({ active, payload, label, countLabel }) => {
   )
 }
 
-export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, labelFormatter, countLabel = 'Shots' }) {
+export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, labelFormatter, countLabel = 'Shots', collapsible = true }) {
   const [containerRef, containerWidth] = useContainerWidth()
+  const [expanded, setExpanded] = useState(false)
   const { theme } = useTheme()
   const isLight = theme === 'light'
+
+  // Split off the low-value tail (only when collapsing by percentage, showPct).
+  const { visible, hidden, hiddenPct, hiddenCount } =
+    collapsible && showPct && data
+      ? splitLowValue(data)
+      : { visible: data, hidden: [], hiddenPct: 0, hiddenCount: 0 }
+  const rows = expanded ? data : visible
+  const toggle = hidden.length > 0 ? (
+    <CollapseToggle
+      expanded={expanded}
+      onToggle={() => setExpanded((e) => !e)}
+      hidden={hidden}
+      hiddenPct={hiddenPct}
+      hiddenCount={hiddenCount}
+      countLabel={countLabel}
+    />
+  ) : null
 
   const tickColor = isLight ? '#6c6c70' : '#8e8e93'
   const labelColor = isLight ? '#1c1c1e' : '#f2f2f7'
@@ -43,7 +86,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
 
   const isNarrow = containerWidth < 480
 
-  const formatted = data.map((d) => ({
+  const formatted = rows.map((d) => ({
     ...d,
     displayValue: showPct ? parseFloat(d[valueKey].toFixed(1)) : d[valueKey],
     label: labelFormatter ? labelFormatter(d.name) : d.name,
@@ -73,6 +116,7 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
             </div>
           )
         })}
+        {toggle}
       </div>
     )
   }
@@ -86,7 +130,8 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
   const height = Math.max(120, formatted.length * (barHeight + gap) + 40)
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height }}>
+    <div ref={containerRef}>
+      <div style={{ width: '100%', height }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={formatted}
@@ -123,6 +168,8 @@ export default function HorizBarChart({ data, valueKey = 'pct', showPct = true, 
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
+      {toggle}
     </div>
   )
 }

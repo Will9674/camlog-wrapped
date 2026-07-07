@@ -12,19 +12,6 @@ export default function App() {
   // giving it a correct initial date range without syncing state in an effect.
   const [loadId, setLoadId] = useState(0)
 
-  useEffect(() => {
-    if (window.opener) {
-      try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://app.camlog.app') } catch (_) {}
-    }
-    function onMessage(evt) {
-      if (evt.origin !== 'https://app.camlog.app') return
-      if (evt.data?.type !== 'camlog-import') return
-      ingestCsvString(evt.data.csv, evt.data.name)
-    }
-    window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
-  }, [])
-
   function titleFromFilename(name) {
     return name
       .replace(/\.csv$/i, '')
@@ -75,6 +62,23 @@ export default function App() {
       setLoading(false)
     }
   }
+
+  // Deep-link handshake with the main CamLog app: when Wrapped is opened from
+  // app.camlog.app, accept a CSV pushed via postMessage (so the user skips the
+  // manual export/upload) and announce readiness. The listener is attached before
+  // the ready ping so a fast reply from the opener can't race ahead of it.
+  useEffect(() => {
+    function onMessage(evt) {
+      if (evt.origin !== 'https://app.camlog.app') return
+      if (evt.data?.type !== 'camlog-import') return
+      ingestCsvString(evt.data.csv, evt.data.name)
+    }
+    window.addEventListener('message', onMessage)
+    if (window.opener) {
+      try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://app.camlog.app') } catch { /* opener gone or cross-origin — ignore */ }
+    }
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
 
   function handleReset() {
     setRows(null)

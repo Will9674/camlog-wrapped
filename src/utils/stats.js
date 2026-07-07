@@ -184,52 +184,92 @@ function normalizeFractions(s) {
   return s.replace(/\b1\s*[^\d\w\s.]\s*(2|4|8|16)\b/g, '1/$1')
 }
 
-// Formats a parsed ND filter into a canonical label.
-// INT/EXT suffixes are stripped (form-factor variants, same density).
-// All other suffixes (SE, HE, etc.) are joined directly to ND: "NDSE 0.6".
-function formatND(numStr, rawSuffix) {
-  let val = parseFloat(numStr)
-  if (!numStr.includes('.')) val = val / 10
-  const suffix = /^(?:int(?:\/ext)?|ext(?:\/int)?)$/i.test(rawSuffix) ? '' : rawSuffix.toUpperCase()
-  return suffix ? `ND${suffix} ${val.toFixed(1)}` : `ND ${val.toFixed(1)}`
+// Normalizes an ND/IRND filter to a canonical label, or returns null if `s` isn't one.
+//
+// CamLog stores these densities as .3/.6/.9/1.2/1.5/1.8/2.1/2.4, but logs in the wild
+// use the compact tenths shorthand too (3→0.3, 15→1.5, 24→2.4). Both spellings mean the
+// same filter, so we fold them to one canonical density. Int/Ext is a real modifier in
+// CamLog's schema (not a spelling variant), so it's PRESERVED as a distinct category —
+// "INTERNAL ND 1.5" stays separate from a plain "ND 1.5". Other product suffixes
+// (SE, HE, ATN…) stay fused to the type as before ("NDSE 0.6").
+//
+// Handles leading words ("Internal ND15"), abbreviations ("EXT ND .6"), parenthesized
+// modifiers ("ND1.2 (Int)"), IRND, and either strength/suffix order ("ND 6 SE" / "NDSE 6").
+// Bails (→ null) on anything that isn't a clean single token, e.g. comma-less compounds
+// like "ND 1.2 POLA CLEAR", which then fall through to default handling.
+function parseNd(s) {
+  if (!/nd/i.test(s)) return null
+
+  let qual = ''
+  const setQual = (q) => { if (!qual && q) qual = /^int/i.test(q) ? 'Internal' : 'External' }
+
+  // Pull an Int/Ext qualifier from parentheses or a leading word.
+  const par = s.match(/\((int(?:ernal)?|ext(?:ernal)?)\)/i)
+  if (par) { setQual(par[1]); s = s.replace(par[0], ' ') }
+  const lead = s.match(/^(int(?:ernal)?|ext(?:ernal)?)\b\s*/i)
+  if (lead) { setQual(lead[1]); s = s.slice(lead[0].length) }
+  s = s.replace(/\s+/g, ' ').trim()
+
+  // Must be ND or IRND now (the anchor protects names that merely contain "nd", e.g. "BLACK DIAMOND").
+  const typeM = s.match(/^(ir)?nd(?:\b|(?=[.\d]))/i)
+  if (!typeM) return null
+  const type = typeM[1] ? 'IRND' : 'ND'
+  const body = s.slice(typeM[0].length).trim()
+
+  // body := optional-suffix + optional-number + optional-suffix, nothing else.
+  const m = body.match(/^([a-z]{2,})?\s*(\d*\.?\d+)?\s*([a-z]{2,}(?:\/[a-z]{2,})?)?$/i)
+  if (!m) return null
+  let suffix = m[1] || m[3] || ''
+  const numStr = m[2] || ''
+  if (/^(int(?:ernal)?|ext(?:ernal)?)$/i.test(suffix)) { setQual(suffix); suffix = '' }
+
+  // Integers are tenths shorthand (15 → 1.5); decimals pass through.
+  let density = ''
+  if (numStr) {
+    let val = parseFloat(numStr)
+    if (!numStr.includes('.')) val = val / 10
+    density = val.toFixed(1)
+  }
+
+  const prefix = qual ? `${qual} ` : ''
+  const nd = suffix ? `${type}${suffix.toUpperCase()}` : type
+  return `${prefix}${nd}${density ? ` ${density}` : ''}`.toUpperCase()
 }
 
 function normalizeFilter(raw) {
   let s = raw.trim().replace(/\s+/g, ' ')
   if (!s) return null
 
+  // ND/IRND filters (incl. Internal/External variants) — handled before the generic
+  // preprocessing below, which would otherwise mangle decimals like "ND.3" → "ND 3".
+  const nd = parseNd(s)
+  if (nd) return nd
+
   s = normalizeFractions(
     s
-      .replace(/([a-z])[.,](\d)/gi, '$1 $2')  // strip stray dot/comma: ND.3 → ND 3
+      // Sub-1.0 decimal strengths (GRAD.6, ATT.3) → "0.x" so they read as densities,
+      // not whole stops. (ND/IRND already handled above.)
+      .replace(/([a-z])\s*\.(\d)/gi, '$1 0.$2')
       .replace(/([a-z])(\d)/gi, '$1 $2')       // space between abbrev and number: BDFX2 → BDFX 2
   ).replace(/\s+/g, ' ').trim()
   if (!s) return null
 
-  // ND filters — integers are shorthand for tenths: ND3 → ND 0.3, ND12 → ND 1.2
-  // Suffixes SE/HE etc. identify distinct filter products and are joined to ND: "NDSE 0.6"
-  // INT/EXT are form-factor variants only — stripped, same optical density
-  // Handles two input orderings:
-  //   suffix before number: "NDSE 3", "NDSE3"  → "NDSE 0.3"
-  //   suffix after number:  "ND 6 SE", "ND3SE" → "NDSE 0.6"
-  const ndFusedMatch = s.match(/^nd([a-z]{2,})\s*(\d*\.?\d+)$/i)
-  if (ndFusedMatch) return formatND(ndFusedMatch[2], ndFusedMatch[1])
-
-  const ndMatch = s.match(/^nd\s*(\d*\.?\d+)\s*([a-z]+(?:\/[a-z]+)?)?$/i)
-  if (ndMatch) return formatND(ndMatch[1], ndMatch[2] || '')
-
-  if (/^nd$/i.test(s)) return 'ND'
-
-  // Split Diopter: "Split DIO 2", "Split Diopter 1/2" → "Split Diopter +2", "Split Diopter +1/2"
-  const splitDioMatch = s.match(/^split\s+(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
-  if (splitDioMatch) return `Split Diopter +${splitDioMatch[1]}`
-
-  // Diopter: "DIO1", "DIO +1", "Diopter 1/2", "DIO 1-2" → "Diopter +1", "Diopter +1/2"
-  const dioMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
-  if (dioMatch) return `Diopter +${dioMatch[1]}`
-  // Fallback for any separator that survived pre-processing (e.g. unusual dash variants)
-  const dioSepMatch = s.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)\s*[^\d\w\s.]\s*(\d+)$/i)
-  if (dioSepMatch) return `Diopter +${dioSepMatch[1]}/${dioSepMatch[2]}`
-  if (/^(?:dio(?:pter)?)$/i.test(s)) return 'Diopter'
+  // Diopter / Split Diopter → "Diopter +N" / "Split Diopter +N" (N whole or fractional).
+  // "Split" may lead ("Split DIO 2") or trail as CamLog's modifier ("DIO2 (Split)").
+  {
+    let d = s
+    let split = false
+    if (/^split\b/i.test(d))            { split = true; d = d.replace(/^split\s*/i, '') }
+    if (/\(?\bsplit\b\)?\s*$/i.test(d)) { split = true; d = d.replace(/\s*\(?\bsplit\b\)?\s*$/i, '') }
+    d = d.trim()
+    const pre = split ? 'Split ' : ''
+    const dioMatch = d.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+(?:\/\d+)?)$/i)
+    if (dioMatch) return `${pre}Diopter +${dioMatch[1]}`
+    // Fallback for any separator that survived pre-processing (e.g. unusual dash variants)
+    const dioSepMatch = d.match(/^(?:dio(?:pter)?)\s*\+?\s*(\d+)\s*[^\d\w\s.]\s*(\d+)$/i)
+    if (dioSepMatch) return `${pre}Diopter +${dioSepMatch[1]}/${dioSepMatch[2]}`
+    if (/^(?:dio(?:pter)?)$/i.test(d)) return `${pre}Diopter`
+  }
 
   // Polarizer
   if (/^pola(?:ri[sz]er)?$/i.test(s)) return 'Pola'
@@ -265,6 +305,27 @@ export function filterUsage(rows) {
       .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }))
       .sort((a, b) => b.count - a.count)
   )
+}
+
+// Splits a percentage-sorted list into a head worth showing and a low-value tail.
+// Rule: hide items below `threshold`%, but always keep at least `minVisible`, and
+// only collapse at all when the tail has at least `minHidden` items (a 1–2 item tail
+// isn't worth a toggle). Input must be sorted descending by pct — which every
+// *Usage() helper returns, since pct is proportional to count.
+// Returns { visible, hidden, hiddenPct, hiddenCount }.
+export function splitLowValue(data, { threshold = 2, minVisible = 8, minHidden = 3 } = {}) {
+  const aboveCount = data.filter((d) => d.pct >= threshold).length
+  const cutoff = Math.max(minVisible, aboveCount)
+  const hidden = data.slice(cutoff)
+  if (hidden.length < minHidden) {
+    return { visible: data, hidden: [], hiddenPct: 0, hiddenCount: 0 }
+  }
+  return {
+    visible: data.slice(0, cutoff),
+    hidden,
+    hiddenPct: hidden.reduce((s, d) => s + d.pct, 0),
+    hiddenCount: hidden.reduce((s, d) => s + d.count, 0),
+  }
 }
 
 export function getDateRange(rows) {

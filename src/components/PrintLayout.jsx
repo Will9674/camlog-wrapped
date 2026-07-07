@@ -1,6 +1,6 @@
 import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
-import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots, getCameraColorByIndex } from '../utils/stats'
+import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots, getCameraColorByIndex, splitLowValue } from '../utils/stats'
 import { fmtDate } from '../utils/format'
 
 const CHART_WIDTH = 652
@@ -55,6 +55,17 @@ function StatRow({ children }) {
   return <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>{children}</div>
 }
 
+// A "winner" highlight card: label, top item name (truncated), and its share.
+function Highlight({ label, name, pct }) {
+  return (
+    <div style={{ flex: 1, minWidth: 0, background: 'white', border: '1px solid #e8e3da', borderRadius: 10, padding: '12px 16px' }}>
+      <div style={s.label}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1916', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...s.mono }}>{name}</div>
+      <div style={{ fontSize: 12, color: '#6b6762', marginTop: 3, ...s.mono }}>{pct.toFixed(1)}%</div>
+    </div>
+  )
+}
+
 function SectionCard({ title, children }) {
   return (
     <div style={{ background: 'white', border: '1px solid #e8e3da', borderRadius: 12, padding: '20px 24px', marginBottom: 24, pageBreakInside: 'avoid' }}>
@@ -67,7 +78,14 @@ function SectionCard({ title, children }) {
 function HorizPrintChart({ data }) {
   if (!data || data.length === 0) return null
 
-  const formatted = data.map((d) => ({
+  // Collapse the low-value tail into a single "Other" row so the PDF stays readable
+  // (same 2% guard-railed rule as the dashboard, but static since a PDF can't expand).
+  const { visible, hidden, hiddenPct, hiddenCount } = splitLowValue(data)
+  const rows = hidden.length > 0
+    ? [...visible, { name: `Other (${hidden.length})`, pct: hiddenPct, count: hiddenCount, _other: true }]
+    : data
+
+  const formatted = rows.map((d) => ({
     ...d,
     displayValue: parseFloat(d.pct.toFixed(1)),
     barLabel: `${d.pct.toFixed(1)}%  ·  ${d.count} ${d.count === 1 ? 'Shot' : 'Shots'}`,
@@ -105,7 +123,7 @@ function HorizPrintChart({ data }) {
         tickLine={false}
       />
       <Bar dataKey="displayValue" radius={[0, 2, 2, 0]}>
-        {formatted.map((_, i) => <Cell key={i} fill="#1a1916" />)}
+        {formatted.map((d, i) => <Cell key={i} fill={d._other ? '#a09e99' : '#1a1916'} />)}
         <LabelList
           dataKey="barLabel"
           position="right"
@@ -169,7 +187,7 @@ function VertPrintChart({ data }) {
   )
 }
 
-const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle }, ref) {
+const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle, filterContext }, ref) {
   const shotsRows      = useMemo(() => deduplicateShots(rows), [rows])
   const { data: lensData, unknownCount: lensUnknown } = useMemo(() => lensUsage(shotsRows), [shotsRows])
   const suppData       = useMemo(() => supportUsage(shotsRows), [shotsRows])
@@ -215,6 +233,11 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
         <div style={{ fontSize: 26, fontWeight: 600, color: '#1a1916', letterSpacing: '0.06em', textTransform: 'uppercase', ...s.mono }}>
           {projectTitle}
         </div>
+        {filterContext && (
+          <div style={{ fontSize: 12, color: '#6b6762', letterSpacing: '0.04em', marginTop: 8, ...s.mono }}>
+            Filtered · {filterContext}
+          </div>
+        )}
       </div>
 
       {/* Global summary */}
@@ -223,6 +246,15 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle 
         <StatCard label="Shooting Days" value={stats.shootingDays} />
         <StatCard label="Avg Shots / Day" value={stats.avgShotsPerDay} />
       </StatRow>
+
+      {/* Highlights — the winners of each breakdown, up top before the detail charts */}
+      {(lensData[0] || suppData[0] || filtrData[0]) && (
+        <StatRow>
+          {lensData[0]  && <Highlight label="Top Lens"     name={lensData[0].name}  pct={lensData[0].pct} />}
+          {suppData[0]  && <Highlight label="Most Shot On"  name={suppData[0].name}  pct={suppData[0].pct} />}
+          {filtrData[0] && <Highlight label="Top Filter"    name={filtrData[0].name} pct={filtrData[0].pct} />}
+        </StatRow>
+      )}
       {(stats.dateFirst || stats.busiestDay) && (() => {
         const a = stats.dateFirst ? fmtDate(stats.dateFirst) : null
         const b = stats.dateLast ? fmtDate(stats.dateLast) : null

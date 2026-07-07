@@ -91,45 +91,52 @@ export default function Dashboard({ rows, projectTitle, onReset }) {
       const img = new Image()
       await new Promise((res) => { img.onload = res; img.src = dataUrl })
 
-      // Paginate onto standard A4 sheets (595 × 842 pt), breaking *between* the layout's
-      // blocks (header, stat rows, section cards, footer) so a chart is never sliced across
-      // a page. Greedily pack blocks onto a page; when the next block would overflow, start
-      // a fresh page at its top. Each page renders only its own crop of the raster.
+      // Paginate onto standard A4 sheets (595 × 842 pt). Each of the layout's blocks
+      // (header, stat rows, section cards, footer) is placed individually with comfortable
+      // spacing, so a chart is never sliced across a page. Blocks are packed onto a page
+      // until the next won't fit; content pages after the first center their blocks
+      // vertically so a sheet isn't top-heavy with a blank bottom.
       const { jsPDF } = await import('jspdf')
-      const pageW = 595, pageH = 842
-      const layoutW = el.offsetWidth
-      const layoutH = el.offsetHeight
-      const scaleImg = img.naturalWidth / layoutW   // layout px → raster px (the pixelRatio)
-      const toPt = pageW / layoutW                  // layout px → PDF points
-      const pageHpx = pageH / toPt                  // one A4 page height, in layout px
+      const pageW = 595, pageH = 842, margin = 40, gap = 26
+      const scaleImg = img.naturalWidth / el.offsetWidth  // layout px → raster px (pixelRatio)
+      const toPt = pageW / el.offsetWidth                 // layout px → PDF points
 
       const blocks = [...el.children]
-        .filter((c) => c.offsetHeight > 2)          // skip the injected <style> tag
-        .map((c) => ({ top: c.offsetTop, bot: c.offsetTop + c.offsetHeight }))
+        .filter((c) => c.offsetHeight > 2)                // skip the injected <style> tag
+        .map((c) => ({
+          srcTop: Math.round(c.offsetTop * scaleImg),
+          srcH: Math.max(1, Math.round(c.offsetHeight * scaleImg)),
+          hPt: c.offsetHeight * toPt,
+        }))
 
-      const starts = [0]
-      let cur = 0
+      const pages = []
+      let page = [], used = margin
       for (const b of blocks) {
-        if (b.bot - cur > pageHpx) {
-          if (b.top - cur > 1) { cur = b.top; starts.push(cur) }             // break before this block
-          while (b.bot - cur > pageHpx) { cur += pageHpx; starts.push(cur) } // block taller than a page → must split
-        }
+        if (page.length && used + gap + b.hPt > pageH - margin) { pages.push(page); page = []; used = margin }
+        used += (page.length ? gap : 0) + b.hPt
+        page.push(b)
       }
+      if (page.length) pages.push(page)
 
       const pdf = new jsPDF({ unit: 'pt', format: 'a4' })
-      for (let i = 0; i < starts.length; i++) {
-        const startPx = starts[i]
-        const endPx = Math.min(starts[i + 1] ?? layoutH, startPx + pageHpx, layoutH)
-        const cv = document.createElement('canvas')
-        cv.width = img.naturalWidth
-        cv.height = Math.max(1, Math.round((endPx - startPx) * scaleImg))
-        const cx = cv.getContext('2d')
-        cx.fillStyle = '#f0ece4'
-        cx.fillRect(0, 0, cv.width, cv.height)
-        cx.drawImage(img, 0, -Math.round(startPx * scaleImg))
-        if (i > 0) pdf.addPage()
-        pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, pageW, (endPx - startPx) * toPt, undefined, 'FAST')
-      }
+      pages.forEach((pageBlocks, pi) => {
+        if (pi > 0) pdf.addPage()
+        pdf.setFillColor(240, 236, 228)               // cream page background
+        pdf.rect(0, 0, pageW, pageH, 'F')
+        const contentH = pageBlocks.reduce((s, b) => s + b.hPt, 0) + (pageBlocks.length - 1) * gap
+        let y = pi === 0 ? margin : Math.max(margin, (pageH - contentH) / 2)  // header stays top; rest centered
+        for (const b of pageBlocks) {
+          const cv = document.createElement('canvas')
+          cv.width = img.naturalWidth
+          cv.height = b.srcH
+          const cx = cv.getContext('2d')
+          cx.fillStyle = '#f0ece4'
+          cx.fillRect(0, 0, cv.width, cv.height)
+          cx.drawImage(img, 0, -b.srcTop)
+          pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, y, pageW, b.hPt, undefined, 'FAST')
+          y += b.hPt + gap
+        }
+      })
       pdf.save(`${projectTitle || 'CamLog-Wrapped'}.pdf`)
       setExported(true)
       setTimeout(() => setExported(false), 2500)

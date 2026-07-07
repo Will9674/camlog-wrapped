@@ -4,6 +4,11 @@ import { cameraUsage, getCameraColorByIndex } from '../utils/stats'
 
 export default function CameraView({ rows, stats }) {
   const data = useMemo(() => cameraUsage(rows), [rows])
+  const top = data[0]
+  const highlight = top && {
+    label: 'Top Camera',
+    value: `${top.name}${top.model ? ` ${top.model}` : ''} · ${top.pct.toFixed(1)}%`,
+  }
 
   if (data.length === 0) {
     return (
@@ -20,7 +25,7 @@ export default function CameraView({ rows, stats }) {
 
   return (
     <div>
-      <SummaryBar stats={stats} />
+      <SummaryBar stats={stats} highlight={highlight} />
       <div className="bg-(--c-surface) border border-(--c-border) rounded-xl p-6">
         <h2 className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-5">
           Camera Breakdown

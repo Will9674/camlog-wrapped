@@ -8,10 +8,11 @@ export default function SupportView({ rows, stats }) {
   const totalShots = dedupedRows.length
   const includedShots = data.reduce((s, d) => s + d.count, 0)
   const excludedShots = totalShots - includedShots
+  const highlight = data[0] && { label: 'Most Shot On', value: `${data[0].name} · ${data[0].pct.toFixed(1)}%` }
 
   return (
     <div>
-      <SummaryBar stats={stats} />
+      <SummaryBar stats={stats} highlight={highlight} />
       <div className="bg-(--c-surface) border border-(--c-border) rounded-xl p-6">
         <h2 className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-5">
           Camera Support

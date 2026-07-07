@@ -6,10 +6,11 @@ export default function LensView({ rows, stats }) {
   const dedupedRows = deduplicateShots(rows)
   const { data, unknownCount } = lensUsage(dedupedRows)
   const totalShots = dedupedRows.length
+  const highlight = data[0] && { label: 'Top Lens', value: `${data[0].name} · ${data[0].pct.toFixed(1)}%` }
 
   return (
     <div>
-      <SummaryBar stats={stats} />
+      <SummaryBar stats={stats} highlight={highlight} />
       <div className="bg-(--c-surface) border border-(--c-border) rounded-xl p-6">
         <h2 className="text-xs uppercase tracking-widest text-(--c-label) font-['DM_Mono'] mb-5">
           Lens Usage

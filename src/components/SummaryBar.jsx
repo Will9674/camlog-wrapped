@@ -1,8 +1,11 @@
 import StatCard from './StatCard'
 import { fmtDate } from '../utils/format'
 
-export default function SummaryBar({ stats }) {
-  const { totalShots, shootingDays, avgShotsPerDay, dateFirst, dateLast, busiestDay } = stats
+// `highlight` ({ label, value }) is the winning entry for the current view — e.g. the
+// #1 lens on the lens view — shown next to the date range. Busiest Day now lives only
+// on the Per Day view; each other view surfaces its own leader here instead.
+export default function SummaryBar({ stats, highlight }) {
+  const { totalShots, shootingDays, avgShotsPerDay, dateFirst, dateLast } = stats
 
   let dateRange = null
   if (dateFirst && dateLast) {
@@ -13,10 +16,6 @@ export default function SummaryBar({ stats }) {
       : `${a.label}, ${a.year} – ${b.label}, ${b.year}`
   }
 
-  const busiestStr = busiestDay
-    ? `${fmtDate(busiestDay.date).label} · ${busiestDay.count} ${busiestDay.count === 1 ? 'Shot' : 'Shots'}`
-    : null
-
   return (
     <div className="mb-6 space-y-3">
       <div className="grid grid-cols-3 gap-3">
@@ -24,10 +23,10 @@ export default function SummaryBar({ stats }) {
         <StatCard label="Shooting Days" value={shootingDays} />
         <StatCard label="Avg Shots / Day" value={avgShotsPerDay} />
       </div>
-      {(dateRange || busiestStr) && (
+      {(dateRange || highlight) && (
         <div className="grid grid-cols-2 gap-3">
           {dateRange && <StatCard label="Date Range" value={dateRange} small />}
-          {busiestStr && <StatCard label="Busiest Day" value={busiestStr} small />}
+          {highlight && <StatCard label={highlight.label} value={highlight.value} small />}
         </div>
       )}
     </div>

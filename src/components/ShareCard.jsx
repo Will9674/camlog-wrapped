@@ -13,7 +13,7 @@ const useT = () => useContext(CardThemeContext)
 function ProjectTitle({ projectTitle, portrait }) {
   const t = useT()
   return (
-    <div style={{ fontSize: portrait ? 42 : 36, fontWeight: 700, color: t.ink, fontFamily: MONO, letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.15, flexShrink: 0 }}>
+    <div data-role="card-title" style={{ fontSize: portrait ? t.sc(42) : 36, fontWeight: 700, color: t.ink, fontFamily: MONO, letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.15, flexShrink: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
       {projectTitle || 'CamLog Wrapped'}
     </div>
   )
@@ -21,10 +21,10 @@ function ProjectTitle({ projectTitle, portrait }) {
 
 function CardFooter({ portrait = false }) {
   const t = useT()
-  const markSz = portrait ? 16 : 13
-  const urlSz  = portrait ? 19 : 15
+  const markSz = portrait ? t.sc(16) : 13
+  const urlSz  = portrait ? t.sc(19) : 15
   return (
-    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: portrait ? 12 : 10 }}>
+    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: portrait ? t.sc(12) : 10 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <div style={{ fontSize: markSz, fontWeight: 800, fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', letterSpacing: '-0.025em' }}>
           <span style={{ color: t.ink }}>Cam</span>
@@ -36,7 +36,7 @@ function CardFooter({ portrait = false }) {
           camlog.app
         </div>
       </div>
-      <div style={{ height: portrait ? 10 : 8, background: t.gradient, borderRadius: 0 }} />
+      <div style={{ height: portrait ? t.sc(10) : 8, background: t.gradient, borderRadius: 0 }} />
     </div>
   )
 }
@@ -175,17 +175,17 @@ function HeroContent({ label, name, pct, count, portrait = false }) {
   if (portrait) {
     return (
       <div style={{ flexShrink: 0 }}>
-        <div style={{ ...t.viewLabel, fontSize: 30, letterSpacing: '0.08em', marginBottom: 20 }}>{label}</div>
+        <div style={{ ...t.viewLabel, fontSize: t.sc(30), letterSpacing: '0.08em', marginBottom: t.sc(20) }}>{label}</div>
         <FitText
           text={name}
-          maxSize={130}
-          style={{ color: t.ink, lineHeight: 1, marginBottom: 20 }}
+          maxSize={t.sc(130)}
+          style={{ color: t.ink, lineHeight: 1, marginBottom: t.sc(20) }}
         />
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, marginBottom: 14 }}>
-          <div style={{ fontSize: pctSz, fontWeight: 700, fontFamily: MONO, lineHeight: 1, ...t.gradientText, display: 'block' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, marginBottom: t.sc(14) }}>
+          <div style={{ fontSize: t.sc(pctSz), fontWeight: 700, fontFamily: MONO, lineHeight: 1, ...t.gradientText, display: 'block' }}>
             {pctStr}
           </div>
-          <div style={{ fontSize: 22, color: t.ink2, fontFamily: MONO, lineHeight: 1, paddingBottom: 6 }}>
+          <div style={{ fontSize: t.sc(22), color: t.ink2, fontFamily: MONO, lineHeight: 1, paddingBottom: 6 }}>
             {count} {count === 1 ? 'Shot' : 'Shots'}
           </div>
         </div>
@@ -224,8 +224,8 @@ function BarList({ data, topN = 5, portrait = false }) {
   const t = useT()
   const shown   = data.slice(0, topN)
   const maxPct  = shown[0]?.pct || 1
-  const barH    = portrait ? 14 : 9
-  const labelSz = portrait ? 17 : 14
+  const barH    = portrait ? t.sc(14) : 9
+  const labelSz = portrait ? t.sc(17) : 14
 
   const outerStyle = portrait
     ? { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }
@@ -278,7 +278,7 @@ function LensView({ lensData, portrait, listRows }) {
   return (
     <>
       <HeroContent label="Your #1 Lens" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
         <BarList data={lensData.data} topN={listRows} portrait={portrait} />
       </div>
     </>
@@ -291,20 +291,21 @@ function SupportView({ suppData, portrait, listRows }) {
   return (
     <>
       <HeroContent label="Mostly Shot" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
         <BarList data={suppData} topN={listRows} portrait={portrait} />
       </div>
     </>
   )
 }
 
-function cameraRowSizing(n, portrait) {
-  // Design-confirmed baselines: full-size values that fit at threshold n
-  const BASE_PCT_SZ = portrait ? 44 : 28
-  const BASE_GAP    = portrait ? 28 : 14
+function cameraRowSizing(n, portrait, scale = 1) {
+  // Design-confirmed baselines: full-size values that fit at threshold n.
+  // Scaled down for the shorter Feed canvas (see FORMAT_GEOMETRY.scale).
+  const BASE_PCT_SZ = Math.round((portrait ? 44 : 28) * scale)
+  const BASE_GAP    = Math.round((portrait ? 28 : 14) * scale)
   const BASE_N      = portrait ? 6  : 5
   const MIN_GAP     = portrait ? 4  : 2
-  const MIN_PCT_SZ  = portrait ? 14 : 10
+  const MIN_PCT_SZ  = Math.round((portrait ? 14 : 10) * scale)
 
   if (n <= BASE_N) return { pctSz: BASE_PCT_SZ, rowGap: BASE_GAP }
 
@@ -329,25 +330,25 @@ function CameraView({ camData, portrait, camRows }) {
   const shown  = camData.slice(0, camRows)
 
   const effectiveN = shown.length
-  const { pctSz, rowGap } = cameraRowSizing(effectiveN, portrait)
+  const { pctSz, rowGap } = cameraRowSizing(effectiveN, portrait, t.scale)
 
-  const BASE_PCT_SZ = portrait ? 44 : 28
+  const BASE_PCT_SZ = Math.round((portrait ? 44 : 28) * t.scale)
   const r = pctSz / BASE_PCT_SZ
 
-  const swatchSz   = Math.max(portrait ? 10 : 8,  Math.round((portrait ? 26 : 16) * r))
-  const nameSz     = Math.max(portrait ? 10 : 10, Math.round((portrait ? 26 : 18) * r))
-  const countSz    = Math.max(portrait ? 8  : 8,  Math.round((portrait ? 22 : 16) * r))
-  const countW     = Math.max(portrait ? 60 : 40, Math.round((portrait ? 130 : 96) * r))
-  const rowItemGap = portrait ? 18 : 14
+  const swatchSz   = Math.max(portrait ? 10 : 8,  Math.round((portrait ? t.sc(26) : 16) * r))
+  const nameSz     = Math.max(portrait ? 10 : 10, Math.round((portrait ? t.sc(26) : 18) * r))
+  const countSz    = Math.max(portrait ? 8  : 8,  Math.round((portrait ? t.sc(22) : 16) * r))
+  const countW     = Math.max(portrait ? 60 : 40, Math.round((portrait ? t.sc(130) : 96) * r))
+  const rowItemGap = portrait ? t.sc(18) : 14
 
-  const barH         = portrait ? 56 : 44
-  const labelSz      = portrait ? 30 : 24
+  const barH         = portrait ? t.sc(56) : 44
+  const labelSz      = portrait ? t.sc(30) : 24
   const labelSpacing = portrait ? '0.08em' : '0.10em'
 
   return (
     <>
       <div style={{ ...t.viewLabel, fontSize: labelSz, letterSpacing: labelSpacing, flexShrink: 0 }}>Camera Breakdown</div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: portrait ? 14 : 10, minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: portrait ? t.sc(14) : 10, minHeight: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', height: barH, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
           {camData.map((cam, i) => (
             <div key={cam.name} style={{ width: `${cam.pct}%`, background: getCameraColorByIndex(cam.name, i), minWidth: cam.pct > 0 ? 3 : 0 }} />
@@ -393,7 +394,7 @@ function DaysView({ perDayData, stats, portrait }) {
     return `${parseInt(m)}/${parseInt(day)}`
   }
 
-  const valueSz = portrait ? 40 : 36
+  const valueSz = portrait ? t.sc(40) : 36
   const labelSz = 15
 
   return (
@@ -463,7 +464,7 @@ function FiltersView({ filtrData, portrait, listRows }) {
   return (
     <>
       <HeroContent label="Top Filter" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
         <BarList data={filtrData} topN={listRows} portrait={portrait} />
       </div>
     </>
@@ -475,12 +476,12 @@ function FiltersView({ filtrData, portrait, listRows }) {
 // A single "winner" line: small label, big truncating name, gradient pct on the right.
 function WinnerRow({ label, name, pct, portrait }) {
   const t = useT()
-  const nameSz  = portrait ? 40 : 27
-  const pctSz   = portrait ? 40 : 27
-  const labelSz = portrait ? 19 : 13
+  const nameSz  = portrait ? t.sc(40) : 27
+  const pctSz   = portrait ? t.sc(40) : 27
+  const labelSz = portrait ? t.sc(19) : 13
   return (
     <div>
-      <div style={{ ...t.viewLabel, fontSize: labelSz, letterSpacing: '0.10em', marginBottom: portrait ? 8 : 5 }}>{label}</div>
+      <div style={{ ...t.viewLabel, fontSize: labelSz, letterSpacing: '0.10em', marginBottom: portrait ? t.sc(8) : 5 }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16 }}>
         <span style={{ fontFamily: MONO, fontSize: nameSz, fontWeight: 700, color: t.ink, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{name}</span>
         <span style={{ fontFamily: MONO, fontSize: pctSz, fontWeight: 700, lineHeight: 1.1, ...t.gradientText, display: 'block', flexShrink: 0 }}>{pct.toFixed(1)}%</span>
@@ -495,17 +496,17 @@ function CameraStrip({ camData, portrait }) {
   const legend = camData.slice(0, portrait ? 5 : 4)
   return (
     <div style={{ flexShrink: 0 }}>
-      <div style={{ ...t.viewLabel, fontSize: portrait ? 19 : 13, letterSpacing: '0.10em', marginBottom: portrait ? 12 : 9 }}>Cameras</div>
-      <div style={{ display: 'flex', height: portrait ? 26 : 18, borderRadius: 5, overflow: 'hidden', marginBottom: portrait ? 14 : 10 }}>
+      <div style={{ ...t.viewLabel, fontSize: portrait ? t.sc(19) : 13, letterSpacing: '0.10em', marginBottom: portrait ? t.sc(12) : 9 }}>Cameras</div>
+      <div style={{ display: 'flex', height: portrait ? t.sc(26) : 18, borderRadius: 5, overflow: 'hidden', marginBottom: portrait ? t.sc(14) : 10 }}>
         {camData.map((cam, i) => (
           <div key={cam.name} style={{ width: `${cam.pct}%`, background: getCameraColorByIndex(cam.name, i), minWidth: cam.pct > 0 ? 2 : 0 }} />
         ))}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: portrait ? '10px 24px' : '6px 16px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: portrait ? `${t.sc(10)}px ${t.sc(24)}px` : '6px 16px' }}>
         {legend.map((cam, i) => (
           <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <div style={{ width: portrait ? 13 : 10, height: portrait ? 13 : 10, borderRadius: 3, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
-            <span style={{ fontFamily: MONO, fontSize: portrait ? 18 : 13, color: t.ink2, whiteSpace: 'nowrap' }}>
+            <div style={{ width: portrait ? t.sc(13) : 10, height: portrait ? t.sc(13) : 10, borderRadius: 3, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
+            <span style={{ fontFamily: MONO, fontSize: portrait ? t.sc(18) : 13, color: t.ink2, whiteSpace: 'nowrap' }}>
               {cam.name} · {cam.pct.toFixed(1)}%
             </span>
           </div>
@@ -516,6 +517,7 @@ function CameraStrip({ camData, portrait }) {
 }
 
 function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }) {
+  const t = useT()
   const lens = lensData.data[0]
   const supp = suppData[0]
   const filt = filtrData[0]
@@ -526,14 +528,14 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
     filt && { key: 'filter', label: 'Top Filter',    name: filt.name, pct: filt.pct },
   ].filter(Boolean)
 
-  const statSz      = portrait ? 46 : 34
-  const statLabelSz = portrait ? 15 : 12
+  const statSz      = portrait ? t.sc(46) : 34
+  const statLabelSz = portrait ? t.sc(15) : 12
   const bd = stats.busiestDay
 
   return (
     <>
       {/* Headline numbers */}
-      <div style={{ display: 'flex', gap: portrait ? 20 : 14, flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: portrait ? t.sc(20) : 14, flexShrink: 0 }}>
         <HeroStat label="Total Shots"   value={stats.totalShots}   valueSz={statSz} labelSz={statLabelSz} />
         <HeroStat label="Shooting Days" value={stats.shootingDays} valueSz={statSz} labelSz={statLabelSz} />
         {bd && (
@@ -541,7 +543,7 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
             label="Busiest Day"
             value={fmtDate(bd.date).label}
             sub={`${bd.count} ${bd.count === 1 ? 'Shot' : 'Shots'}`}
-            subSize={portrait ? 20 : 15}
+            subSize={portrait ? t.sc(20) : 15}
             valueSz={statSz}
             labelSz={statLabelSz}
           />
@@ -551,7 +553,7 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
       {camData.length > 0 && <CameraStrip camData={camData} portrait={portrait} />}
 
       {/* Winners — flex fills remaining height, rows spread evenly */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', minHeight: 0, gap: portrait ? 0 : 12 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', minHeight: 0, overflow: 'hidden', gap: portrait ? 0 : 12 }}>
         {winners.map((w) => (
           <WinnerRow key={w.key} label={w.label} name={w.name} pct={w.pct} portrait={portrait} />
         ))}
@@ -574,7 +576,12 @@ function EmptyCard({ label }) {
 export function ShareCardContent({ viewId, rows, stats, projectTitle, format = 'square', theme = 'classic' }) {
   const geo = FORMAT_GEOMETRY[format] || FORMAT_GEOMETRY.square
   const portrait = geo.tall   // feed + story share the tall layout; square is compact
-  const t = useMemo(() => buildTheme(theme), [theme])
+  const scale = geo.scale ?? 1 // shrinks the tall layout for the shorter Feed canvas
+  // Theme + a `sc()` helper that scales portrait-layout sizes for the current format.
+  const t = useMemo(() => {
+    const base = buildTheme(theme)
+    return { ...base, scale, sc: (n) => Math.round(n * scale) }
+  }, [theme, scale])
   const shotsRows  = useMemo(() => deduplicateShots(rows), [rows])
   const lensData   = useMemo(() => lensUsage(shotsRows), [shotsRows])
   const suppData   = useMemo(() => supportUsage(shotsRows), [shotsRows])
@@ -582,18 +589,38 @@ export function ShareCardContent({ viewId, rows, stats, projectTitle, format = '
   const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
+  // The tall row counts (geo.listRows/camRows) are the single-line-title optimum. A
+  // wrapped 2-line title eats about one row's height, so measure the rendered title and
+  // drop one entry when it wraps — this keeps single-line cards (the common case) full
+  // without ever clipping the two-line case.
+  const cardRef = useRef(null)
+  const [titleLines, setTitleLines] = useState(1)
+  useLayoutEffect(() => {
+    const el = cardRef.current?.querySelector('[data-role="card-title"]')
+    if (!el) return
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 1
+    setTitleLines(Math.max(1, Math.min(2, Math.round(el.offsetHeight / lh))))
+  }, [projectTitle, format, theme])
+  // Only the scaled-down tall format (Feed) is tight enough to need this; Story has
+  // room for its full row count even with a wrapped title.
+  const rowDrop  = portrait && scale < 1 ? titleLines - 1 : 0
+  const listRows = Math.max(3, geo.listRows - rowDrop)
+  // Camera Breakdown has a big fixed color bar, so its row budget doesn't change with
+  // the title — it's already at its clean max — hence no title-based drop here.
+  const camRows  = geo.camRows
+
   const views = {
     summary: <SummaryView lensData={lensData} suppData={suppData} camData={camData} filtrData={filtrData} stats={stats} portrait={portrait} />,
-    lens:    <LensView lensData={lensData} portrait={portrait} listRows={geo.listRows} />,
-    support: <SupportView suppData={suppData} portrait={portrait} listRows={geo.listRows} />,
-    camera:  <CameraView camData={camData} portrait={portrait} camRows={geo.camRows} />,
+    lens:    <LensView lensData={lensData} portrait={portrait} listRows={listRows} />,
+    support: <SupportView suppData={suppData} portrait={portrait} listRows={listRows} />,
+    camera:  <CameraView camData={camData} portrait={portrait} camRows={camRows} />,
     days:    <DaysView perDayData={perDayData} stats={stats} portrait={portrait} />,
-    filters: <FiltersView filtrData={filtrData} portrait={portrait} listRows={geo.listRows} />,
+    filters: <FiltersView filtrData={filtrData} portrait={portrait} listRows={listRows} />,
   }
 
   return (
     <CardThemeContext.Provider value={t}>
-      <div style={{
+      <div ref={cardRef} style={{
         width: CARD_SIZE,
         height: geo.height,
         background: t.bg,
@@ -604,7 +631,7 @@ export function ShareCardContent({ viewId, rows, stats, projectTitle, format = '
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: portrait ? 28 : 22,
+        gap: portrait ? t.sc(28) : 22,
         fontFamily: MONO,
         overflow: 'hidden',
       }}>

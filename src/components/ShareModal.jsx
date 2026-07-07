@@ -183,25 +183,11 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
     }
   }
 
-  // Background pre-render: once the user settles on a view/format/theme, render the
-  // PNG ahead of time so the next Share/Save is instant (and Share stays inside the
-  // tap's activation window). Debounced so rapid toggling doesn't thrash; the cache
-  // is invalidated immediately on any change.
-  //
-  // Only pre-render where it pays off: keeping the file ready matters for the share-sheet
-  // activation window (mobile). Desktop only downloads — there's no activation constraint —
-  // so it renders on demand at Save time instead of burning cycles on every picker change.
-  useEffect(() => {
-    if (!canShareFiles) return
-    pngRef.current = { key: null, blob: null, file: null }
-    const id = setTimeout(async () => {
-      const out = await renderPng()
-      if (out) pngRef.current = { key: cfgKey, ...out }
-    }, 450)
-    return () => clearTimeout(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView, format, theme, rows, canShareFiles])
-
+  // No background pre-rendering: browsing views/formats/themes stays smooth because
+  // nothing renders until the user actually taps Share or Save. The first tap renders
+  // on demand (~half a second, shown as "Preparing…"/"Saving…") and getPng() caches the
+  // result, so re-tapping the same card is instant. Render time is well inside the Web
+  // Share user-activation window, and a failed share falls back to a download.
   const btnBase     = "px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors"
   const btnActive   = 'bg-(--c-accent) text-white border-transparent'
   const btnInactive = 'bg-transparent text-(--c-nav-fg) border-(--c-border) hover:text-(--c-nav-fg-hover) hover:border-(--c-border-strong)'

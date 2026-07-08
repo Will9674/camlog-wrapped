@@ -43,9 +43,91 @@ export const SHARE_THEME_META = [
   { id: 'scifi',       label: 'Sci-Fi' },
 ]
 
+// ── Custom theme ──────────────────────────────────────────────────────────────
+// The user only chooses the *vibe*: a dark/light background and up to three
+// colors. Every readability-critical token (bg + text tones + bar track) is
+// derived from the mode using values proven on the built-in canvases, so a
+// custom card can never come out as low-contrast text. The colors only drive the
+// accent (labels + solid bars) and the gradient (big % number + footer bar).
+
+export const CUSTOM_MODES = {
+  dark:  { bg: '#111111', surface2: '#2a2a2c', ink: '#f2f2f7', ink2: '#8e8e93', ink3: '#3a3a3c' },
+  light: { bg: '#f0ece4', surface2: '#ddd6c8', ink: '#1a1916', ink2: '#6b6762', ink3: '#a09e99' },
+}
+
+export const CUSTOM_DEFAULT = { mode: 'dark', colors: ['#e63946'] }
+
+// HSL → hex (h 0-360, s/l 0-100).
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100
+  const a = s * Math.min(l, 1 - l)
+  const k = (n) => (n + h / 30) % 12
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))
+  const to = (x) => Math.round(x * 255).toString(16).padStart(2, '0')
+  return `#${to(f(0))}${to(f(8))}${to(f(4))}`
+}
+
+// A harmonious random palette: a random base hue spread across a random color-
+// harmony scheme, at a vivid-but-consistent saturation/lightness. The derived
+// text tokens still come from the (also random) mode, so the result stays legible.
+export function randomPalette() {
+  const base = Math.floor(Math.random() * 360)
+  const schemes = [
+    [0, 30, -30],   // analogous
+    [0, 120, 240],  // triadic
+    [0, 180, 90],   // split-complementary
+    [0, 20, 200],   // contrast pair
+  ]
+  const scheme = schemes[Math.floor(Math.random() * schemes.length)]
+  const s = 70 + Math.floor(Math.random() * 15) // 70–85
+  const l = 52 + Math.floor(Math.random() * 8)  // 52–60
+  const colors = scheme.map((d) => hslToHex(((base + d) % 360 + 360) % 360, s, l))
+  return { mode: Math.random() < 0.5 ? 'dark' : 'light', colors }
+}
+
+// Linear-interpolate a hex color toward a target hex by amt (0..1).
+function mixHex(hex, target, amt) {
+  const p = (h) => {
+    const s = h.replace('#', '')
+    const n = s.length === 3 ? s.split('').map((c) => c + c).join('') : s
+    return [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16))
+  }
+  const [a, b] = [p(hex), p(target)]
+  const c = a.map((v, i) => Math.round(v + (b[i] - v) * amt))
+  return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('')
+}
+
+// Build a 135° gradient from the chosen colors. One color still reads as a
+// gradient via an auto second stop shifted toward white (dark) / black (light).
+function gradientFrom(colors, mode) {
+  const c = (colors || []).filter(Boolean)
+  if (c.length >= 3) return `linear-gradient(135deg, ${c[0]} 0%, ${c[1]} 50%, ${c[2]} 100%)`
+  if (c.length === 2) return `linear-gradient(135deg, ${c[0]} 0%, ${c[1]} 100%)`
+  const c0 = c[0] || '#e63946'
+  const second = mixHex(c0, mode === 'light' ? '#000000' : '#ffffff', 0.32)
+  return `linear-gradient(135deg, ${c0} 0%, ${second} 100%)`
+}
+
+// Turns a custom config { mode, colors } into a base theme object with the same
+// shape as a THEMES entry, so buildTheme() can consume it identically.
+export function buildCustomBase({ mode = 'dark', colors = [] } = {}) {
+  const m = CUSTOM_MODES[mode] || CUSTOM_MODES.dark
+  return {
+    ...m,
+    accent: colors[0] || '#e63946',
+    gradient: gradientFrom(colors, mode),
+  }
+}
+
+// A stable string signature of a custom config, for cache keys / filenames.
+export function customSignature({ mode = 'dark', colors = [] } = {}) {
+  return `custom:${mode}:${(colors || []).filter(Boolean).join('-')}`
+}
+
 // Builds the derived style objects a theme needs (gradient text + view label).
-export function buildTheme(id) {
-  const base = THEMES[id] || THEMES.classic
+// Accepts either a preset id (string) or a pre-built base object (custom themes).
+export function buildTheme(idOrBase) {
+  const base = typeof idOrBase === 'string' ? (THEMES[idOrBase] || THEMES.classic) : idOrBase
   return {
     ...base,
     // Use the `background-image` longhand (not the `background` shorthand): when the

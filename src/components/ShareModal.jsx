@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ShareCardContent } from './ShareCard'
-import { SHARE_THEME_META, THEMES } from './shareThemes'
+import { SHARE_THEME_META, THEMES, buildCustomBase, customSignature, CUSTOM_DEFAULT } from './shareThemes'
 import { CARD_SIZE, FORMAT_GEOMETRY } from './shareCardSize'
+import CustomThemeModal from './ShareCustomTheme'
+
+const CUSTOM_KEY = 'camlog-wrapped-custom-theme'
 
 const PREVIEW_W = 360
 
@@ -26,6 +29,16 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
   const [activeView, setActiveView]   = useState('summary')
   const [format, setFormat]           = useState('square')
   const [theme, setTheme]             = useState('classic')
+  // Custom theme config { mode, colors }, restored from localStorage so a user's
+  // palette survives reloads. `showCustomizer` toggles the color-picker modal.
+  const [customConfig, setCustomConfig] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CUSTOM_KEY) || 'null')
+      if (saved && Array.isArray(saved.colors) && saved.colors.length) return saved
+    } catch { /* ignore malformed storage */ }
+    return CUSTOM_DEFAULT
+  })
+  const [showCustomizer, setShowCustomizer] = useState(false)
   const [exporting, setExporting]     = useState(false)
   const [exported, setExported]       = useState(false)
   const [exportError, setExportError] = useState(false)
@@ -54,6 +67,18 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
       return !!navigator.canShare && navigator.canShare({ files: [probe] })
     } catch { return false }
   }, [])
+
+  // Persist the custom palette whenever it changes.
+  useEffect(() => {
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customConfig)) } catch { /* ignore */ }
+  }, [customConfig])
+
+  // The theme handed to the card: a preset id string, or the derived custom base
+  // object when 'custom' is selected. Memoized so the base has a stable identity
+  // (ShareCardContent depends on it) and only rebuilds when the palette changes.
+  const customBase = useMemo(() => buildCustomBase(customConfig), [customConfig])
+  const isCustom   = theme === 'custom'
+  const themeProp  = isCustom ? customBase : theme
 
   const geo        = FORMAT_GEOMETRY[format] || FORMAT_GEOMETRY.square
   const cardH      = geo.height
@@ -84,7 +109,10 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
   const effectivePreviewW = Math.round(scale * CARD_SIZE)
   const previewH          = Math.round(scale * cardH)
 
-  const cfgKey   = `${activeView}|${format}|${theme}`
+  // Include the custom palette signature so the PNG cache invalidates when the
+  // user recolors a custom theme (the id alone would collide across palettes).
+  const themeKey = isCustom ? customSignature(customConfig) : theme
+  const cfgKey   = `${activeView}|${format}|${themeKey}`
   const filename = `${projectTitle || 'CamLog-Wrapped'}-${activeView}-${format}-${theme}.png`
 
   // Renders the export node to a PNG File. The node is kept in-viewport (html-to-image
@@ -277,6 +305,29 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
                   </button>
                 )
               })}
+
+              {/* Custom theme — previews the user's palette; tapping selects it and
+                  opens the color picker. A pencil badge marks it as editable. */}
+              <button
+                onClick={() => { setTheme('custom'); setShowCustomizer(true) }}
+                title="Custom theme"
+                aria-label="Custom theme"
+                aria-pressed={isCustom}
+                className="relative w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+                style={{
+                  background: customBase.bg,
+                  boxShadow: isCustom
+                    ? '0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-ink)'
+                    : '0 0 0 1px var(--c-border-strong)',
+                }}
+              >
+                <span className="w-3 h-3 rounded-full block" style={{ background: customBase.gradient }} />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-(--c-surface) flex items-center justify-center" style={{ boxShadow: '0 0 0 1px var(--c-border-strong)' }}>
+                  <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-(--c-ink2)">
+                    <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </span>
+              </button>
             </div>
           </div>
 
@@ -294,7 +345,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
                   stats={stats}
                   projectTitle={projectTitle}
                   format={format}
-                  theme={theme}
+                  theme={themeProp}
                 />
               </div>
             </div>
@@ -383,10 +434,18 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
             stats={stats}
             projectTitle={projectTitle}
             format={format}
-            theme={theme}
+            theme={themeProp}
           />
         </div>
       </div>
+
+      {showCustomizer && (
+        <CustomThemeModal
+          config={customConfig}
+          onChange={setCustomConfig}
+          onClose={() => setShowCustomizer(false)}
+        />
+      )}
     </>
   )
 }

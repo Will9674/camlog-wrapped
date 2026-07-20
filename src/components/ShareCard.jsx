@@ -225,7 +225,14 @@ function BarList({ data, topN = 5, portrait = false }) {
   const shown   = data.slice(0, topN)
   const maxPct  = shown[0]?.pct || 1
   const barH    = portrait ? t.sc(14) : 9
-  const labelSz = portrait ? t.sc(17) : 14
+  // Width fit (same approach as CameraView): the label row is monospace on a
+  // fixed 600px canvas, so shrink the type until the longest name + value pair
+  // fits instead of letting the ellipsis eat the name. Floor keeps it legible.
+  const baseLabelSz = portrait ? t.sc(17) : 14
+  const innerW      = CARD_SIZE - (portrait ? 96 : 40)
+  const maxNameLen  = Math.max(...shown.map((d) => d.name.length), 1)
+  const maxValLen   = Math.max(...shown.map((d) => `${d.pct.toFixed(1)}%  ·  ${d.count} ${d.count === 1 ? 'Shot' : 'Shots'}`.length), 1)
+  const labelSz     = Math.max(11, Math.min(baseLabelSz, Math.floor((innerW - 12) / ((maxNameLen + maxValLen) * 0.62))))
 
   const outerStyle = portrait
     ? { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }
@@ -298,6 +305,12 @@ function SupportView({ suppData, portrait, listRows }) {
   )
 }
 
+// Single source of truth for a camera legend row's text, so the width-fit math
+// in CameraView measures exactly the string that gets rendered.
+function cameraLegendText(cam) {
+  return cam.model ? `${cam.name} · ${cam.model}` : `${cam.name} CAMERA`
+}
+
 function cameraRowSizing(n, portrait, scale = 1) {
   // Design-confirmed baselines: full-size values that fit at threshold n.
   // Scaled down for the shorter Feed canvas (see FORMAT_GEOMETRY.scale).
@@ -330,16 +343,38 @@ function CameraView({ camData, portrait, camRows }) {
   const shown  = camData.slice(0, camRows)
 
   const effectiveN = shown.length
-  const { pctSz, rowGap } = cameraRowSizing(effectiveN, portrait, t.scale)
+  const { pctSz: basePctSz, rowGap } = cameraRowSizing(effectiveN, portrait, t.scale)
 
   const BASE_PCT_SZ = Math.round((portrait ? 44 : 28) * t.scale)
-  const r = pctSz / BASE_PCT_SZ
+  const r = basePctSz / BASE_PCT_SZ
 
   const swatchSz   = Math.max(portrait ? 10 : 8,  Math.round((portrait ? t.sc(26) : 16) * r))
-  const nameSz     = Math.max(portrait ? 10 : 10, Math.round((portrait ? t.sc(26) : 18) * r))
-  const countSz    = Math.max(portrait ? 8  : 8,  Math.round((portrait ? t.sc(22) : 16) * r))
-  const countW     = Math.max(portrait ? 60 : 40, Math.round((portrait ? t.sc(130) : 96) * r))
+  const baseNameSz  = Math.max(portrait ? 10 : 10, Math.round((portrait ? t.sc(26) : 18) * r))
+  const baseCountSz = Math.max(portrait ? 8  : 8,  Math.round((portrait ? t.sc(22) : 16) * r))
   const rowItemGap = portrait ? t.sc(18) : 14
+
+  // ── Width fit ──────────────────────────────────────────────────────────────
+  // The row's only flexible element is the name, but the % and count columns
+  // scale with the format's type size — at story sizes they can starve the name
+  // into "S · Alexa…". The card is a fixed 600px canvas and DM Mono is
+  // monospace, so the required width is exactly computable: if the widest
+  // name + % + count row wouldn't fit at base sizes, shrink all three type
+  // sizes by one factor (preserving hierarchy) until it does. Floors keep the
+  // type legible; the ellipsis remains only as a backstop for absurd names.
+  const CHAR   = 0.62 // DM Mono advance width ≈ 0.6em, plus a little safety
+  const innerW = CARD_SIZE - (portrait ? 96 : 40) // canvas minus horizontal padding
+  const maxNameLen  = Math.max(...shown.map((c) => cameraLegendText(c).length))
+  const maxPctLen   = Math.max(...shown.map((c) => `${c.pct.toFixed(1)}%`.length))
+  const maxCountLen = Math.max(...shown.map((c) => `${c.count} ${c.count === 1 ? 'Shot' : 'Shots'}`.length))
+  const textNeeded  = (maxNameLen * baseNameSz + maxPctLen * basePctSz + maxCountLen * baseCountSz) * CHAR
+  const textAvail   = innerW - swatchSz - 3 * rowItemGap
+  const f = Math.min(1, textAvail / textNeeded)
+
+  const nameSz  = Math.max(11, Math.floor(baseNameSz * f))
+  const pctSz   = Math.max(14, Math.floor(basePctSz * f))
+  const countSz = Math.max(10, Math.floor(baseCountSz * f))
+  // Content-sized count column (fixed width wasted space and starved the name).
+  const countW  = Math.ceil(maxCountLen * countSz * CHAR)
 
   const barH         = portrait ? t.sc(56) : 44
   const labelSz      = portrait ? t.sc(30) : 24
@@ -359,7 +394,7 @@ function CameraView({ camData, portrait, camRows }) {
             <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: rowItemGap }}>
               <div style={{ width: swatchSz, height: swatchSz, borderRadius: 4, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
               <span style={{ fontFamily: MONO, fontSize: nameSz, color: t.ink, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {cam.model ? `${cam.name} · ${cam.model}` : `${cam.name} CAMERA`}
+                {cameraLegendText(cam)}
               </span>
               <span style={{ fontFamily: MONO, fontSize: pctSz, fontWeight: 600, color: t.ink }}>{cam.pct.toFixed(1)}%</span>
               <span style={{ fontFamily: MONO, fontSize: countSz, color: t.ink2, width: countW, textAlign: 'right' }}>{cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}</span>
@@ -474,10 +509,12 @@ function FiltersView({ filtrData, portrait, listRows }) {
 // ── Summary: the winners of every view on one card ────────────────────────────
 
 // A single "winner" line: small label, big truncating name, gradient pct on the right.
-function WinnerRow({ label, name, pct, portrait }) {
+function WinnerRow({ label, name, pct, portrait, fitSz }) {
   const t = useT()
-  const nameSz  = portrait ? t.sc(40) : 27
-  const pctSz   = portrait ? t.sc(40) : 27
+  // fitSz (from SummaryView) shrinks name+pct together so long winner names
+  // fit instead of ellipsizing; all rows share one size for a consistent look.
+  const nameSz  = fitSz ?? (portrait ? t.sc(40) : 27)
+  const pctSz   = nameSz
   const labelSz = portrait ? t.sc(19) : 13
   return (
     <div>
@@ -504,9 +541,10 @@ function CameraStrip({ camData, portrait }) {
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: portrait ? `${t.sc(10)}px ${t.sc(24)}px` : '6px 16px' }}>
         {legend.map((cam, i) => (
-          <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <div key={cam.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, maxWidth: '100%' }}>
             <div style={{ width: portrait ? t.sc(13) : 10, height: portrait ? t.sc(13) : 10, borderRadius: 3, background: getCameraColorByIndex(cam.name, i), flexShrink: 0 }} />
-            <span style={{ fontFamily: MONO, fontSize: portrait ? t.sc(18) : 13, color: t.ink2, whiteSpace: 'nowrap' }}>
+            {/* Ellipsis backstop: without it a long camera name overflows the card edge */}
+            <span style={{ fontFamily: MONO, fontSize: portrait ? t.sc(18) : 13, color: t.ink2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
               {cam.name} · {cam.pct.toFixed(1)}%
             </span>
           </div>
@@ -532,6 +570,14 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
   const statLabelSz = portrait ? t.sc(15) : 12
   const bd = stats.busiestDay
 
+  // Uniform width-fit for the winner rows: size name+pct so the longest
+  // name/pct pair fits the canvas; one shared size keeps the rows consistent.
+  const baseWinnerSz = portrait ? t.sc(40) : 27
+  const innerW       = CARD_SIZE - (portrait ? 96 : 40)
+  const maxWinLen    = Math.max(...winners.map((w) => w.name.length), 1)
+  const maxWinPctLen = Math.max(...winners.map((w) => `${w.pct.toFixed(1)}%`.length), 1)
+  const winnerFitSz  = Math.max(15, Math.min(baseWinnerSz, Math.floor((innerW - 16) / ((maxWinLen + maxWinPctLen) * 0.62))))
+
   return (
     <>
       {/* Headline numbers */}
@@ -555,7 +601,7 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
       {/* Winners — flex fills remaining height, rows spread evenly */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', minHeight: 0, overflow: portrait ? 'hidden' : 'visible', gap: portrait ? 0 : 12 }}>
         {winners.map((w) => (
-          <WinnerRow key={w.key} label={w.label} name={w.name} pct={w.pct} portrait={portrait} />
+          <WinnerRow key={w.key} label={w.label} name={w.name} pct={w.pct} portrait={portrait} fitSz={winnerFitSz} />
         ))}
       </div>
     </>

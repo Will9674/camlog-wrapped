@@ -49,9 +49,12 @@ export default function CameraView({ rows, stats }) {
         {/* Legend rows */}
         <div className="flex flex-col gap-3">
           {data.map((cam, i) => (
-            <div key={cam.name} className="flex items-center gap-3">
+            // items-start so the chip, letter, pct, and count all sit on the first
+            // line when a long model wraps; the chip gets a 3px nudge to optically
+            // center against the 20px first text line.
+            <div key={cam.name} className="flex items-start gap-3">
               <div
-                className="flex-shrink-0 rounded-sm"
+                className="flex-shrink-0 rounded-sm mt-[3px]"
                 style={{ width: 14, height: 14, background: getCameraColorByIndex(cam.name, i) }}
               />
               {/* Wraps rather than truncates: on phone widths the pct + count columns

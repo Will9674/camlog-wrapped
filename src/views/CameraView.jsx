@@ -54,7 +54,10 @@ export default function CameraView({ rows, stats }) {
                 className="flex-shrink-0 rounded-sm"
                 style={{ width: 14, height: 14, background: getCameraColorByIndex(cam.name, i) }}
               />
-              <div className="flex-1 min-w-0 truncate font-['DM_Mono'] text-sm">
+              {/* Wraps rather than truncates: on phone widths the pct + count columns
+                  leave too little room, and a clipped camera name is worse than a
+                  second line in a scrollable dashboard. */}
+              <div className="flex-1 min-w-0 break-words font-['DM_Mono'] text-sm">
                 <span className="text-(--c-ink)">{cam.name}</span>
                 {cam.model && (
                   <>
@@ -66,7 +69,7 @@ export default function CameraView({ rows, stats }) {
               <span className="font-['DM_Mono'] text-sm text-(--c-ink2) flex-shrink-0">
                 {cam.pct.toFixed(1)}%
               </span>
-              <span className="font-['DM_Mono'] text-sm text-(--c-ink3) w-24 text-right flex-shrink-0">
+              <span className="font-['DM_Mono'] text-sm text-(--c-ink3) text-right flex-shrink-0 w-auto sm:w-24">
                 {cam.count} {cam.count === 1 ? 'Shot' : 'Shots'}
               </span>
             </div>

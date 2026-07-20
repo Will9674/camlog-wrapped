@@ -56,14 +56,17 @@ export default function CameraView({ rows, stats }) {
               />
               {/* Wraps rather than truncates: on phone widths the pct + count columns
                   leave too little room, and a clipped camera name is worse than a
-                  second line in a scrollable dashboard. */}
-              <div className="flex-1 min-w-0 break-words font-['DM_Mono'] text-sm">
-                <span className="text-(--c-ink)">{cam.name}</span>
-                {cam.model && (
+                  second line in a scrollable dashboard. The letter + separator is a
+                  fixed column so a wrapped model line aligns under the model text,
+                  not under the camera letter (hanging indent). */}
+              <div className="flex-1 min-w-0 flex font-['DM_Mono'] text-sm">
+                {cam.model ? (
                   <>
-                    <span className="text-(--c-ink3)"> · </span>
-                    <span className="text-(--c-ink2)">{cam.model}</span>
+                    <span className="text-(--c-ink) flex-shrink-0 whitespace-pre">{cam.name}<span className="text-(--c-ink3)"> · </span></span>
+                    <span className="text-(--c-ink2) break-words min-w-0">{cam.model}</span>
                   </>
+                ) : (
+                  <span className="text-(--c-ink) break-words min-w-0">{cam.name}</span>
                 )}
               </div>
               <span className="font-['DM_Mono'] text-sm text-(--c-ink2) flex-shrink-0">

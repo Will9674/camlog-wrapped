@@ -3,7 +3,7 @@ import {
   lensUsage, supportUsage, cameraUsage, filterUsage,
   takesPerDay, deduplicateShots, getCameraColorByIndex,
 } from '../utils/stats'
-import { fmtDate, shortFilterName } from '../utils/format'
+import { fmtDate, shortFilterName, headlineFilterName } from '../utils/format'
 import { CARD_SIZE, FORMAT_GEOMETRY } from './shareCardSize'
 import { MONO, buildTheme } from './shareThemes'
 
@@ -500,13 +500,15 @@ function DaysView({ perDayData, stats, portrait }) {
 
 function FiltersView({ filtrData, portrait, listRows }) {
   if (!filtrData.length) return <EmptyCard label="No filter data recorded" />
-  const data = filtrData.map((d) => ({ ...d, name: shortFilterName(d.name) }))
-  const top = data[0]
+  // Hero drops the orientation (headline form); the list keeps it (shorthand only)
+  // so distinct orientations stay distinguishable as separate rows.
+  const listData = filtrData.map((d) => ({ ...d, name: shortFilterName(d.name) }))
+  const top = filtrData[0]
   return (
     <>
-      <HeroContent label="Top Filter" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
+      <HeroContent label="Top Filter" name={headlineFilterName(top.name)} pct={top.pct} count={top.count} portrait={portrait} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: portrait ? 'hidden' : 'visible', ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
-        <BarList data={data} topN={listRows} portrait={portrait} />
+        <BarList data={listData} topN={listRows} portrait={portrait} />
       </div>
     </>
   )
@@ -569,7 +571,7 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
   const winners = [
     lens && { key: 'lens',   label: 'Top Lens',      name: lens.name, pct: lens.pct },
     supp && { key: 'supp',   label: 'Most Shot On',  name: supp.name, pct: supp.pct },
-    filt && { key: 'filter', label: 'Top Filter',    name: shortFilterName(filt.name), pct: filt.pct },
+    filt && { key: 'filter', label: 'Top Filter',    name: headlineFilterName(filt.name), pct: filt.pct },
   ].filter(Boolean)
 
   const statSz      = portrait ? t.sc(46) : 34

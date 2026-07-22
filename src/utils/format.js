@@ -13,3 +13,12 @@ export function fmtDate(dateStr) {
 export function shortFilterName(name) {
   return name.replace(/\bINTERNAL\b/gi, 'INT').replace(/\bEXTERNAL\b/gi, 'EXT')
 }
+
+// Headline form for single big-stat displays (Summary winner, Filters hero, PDF
+// highlight): shorthand PLUS drop a trailing orientation/qualifier parenthetical,
+// so "ATT ND 1.2 (H TOP)" reads "ATT ND 1.2" — filter + strength stay prominent.
+// Only for the one-line headline; detailed lists keep the full name so distinct
+// orientations (H TOP vs H BOT) don't collapse into identical-looking rows.
+export function headlineFilterName(name) {
+  return shortFilterName(name).replace(/\s*\([^)]*\)\s*$/, '').trim()
+}

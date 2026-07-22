@@ -203,12 +203,29 @@ function parseNd(s) {
   let qual = ''
   const setQual = (q) => { if (!qual && q) qual = /^int/i.test(q) ? 'Internal' : 'External' }
 
+  // Pull a trailing orientation parenthetical (e.g. "ATT ND 1.2 (H TOP)") so
+  // graduated/attenuator ND filters still route through density normalization.
+  // Int/Ext parens are handled just below, so those are left in place here.
+  let orient = ''
+  const orientM = s.match(/\s*\(([^)]*)\)\s*$/)
+  if (orientM && !/^(int(?:ernal)?|ext(?:ernal)?)$/i.test(orientM[1].trim())) {
+    orient = orientM[1].trim().toUpperCase()
+    s = (s.slice(0, orientM.index) + ' ' + s.slice(orientM.index + orientM[0].length)).trim()
+  }
+
   // Pull an Int/Ext qualifier from parentheses or a leading word.
   const par = s.match(/\((int(?:ernal)?|ext(?:ernal)?)\)/i)
   if (par) { setQual(par[1]); s = s.replace(par[0], ' ') }
   const lead = s.match(/^(int(?:ernal)?|ext(?:ernal)?)\b\s*/i)
   if (lead) { setQual(lead[1]); s = s.slice(lead[0].length) }
   s = s.replace(/\s+/g, ' ').trim()
+
+  // Pull a leading graduated-filter modifier (attenuator / graduated), preserved
+  // as a prefix so "ATT ND12" reads "ATT ND 1.2" instead of skipping this parser
+  // and losing the tenths-shorthand → decimal normalization.
+  let mod = ''
+  const modM = s.match(/^(att|grad)\b\s*/i)
+  if (modM) { mod = modM[1].toUpperCase(); s = s.slice(modM[0].length) }
 
   // Must be ND or IRND now (the anchor protects names that merely contain "nd", e.g. "BLACK DIAMOND").
   const typeM = s.match(/^(ir)?nd(?:\b|(?=[.\d]))/i)
@@ -231,9 +248,10 @@ function parseNd(s) {
     density = val.toFixed(1)
   }
 
-  const prefix = qual ? `${qual} ` : ''
+  const prefix = [mod, qual].filter(Boolean).join(' ')
   const nd = suffix ? `${type}${suffix.toUpperCase()}` : type
-  return `${prefix}${nd}${density ? ` ${density}` : ''}`.toUpperCase()
+  const core = `${prefix ? `${prefix} ` : ''}${nd}${density ? ` ${density}` : ''}`.toUpperCase()
+  return orient ? `${core} (${orient})` : core
 }
 
 function normalizeFilter(raw) {

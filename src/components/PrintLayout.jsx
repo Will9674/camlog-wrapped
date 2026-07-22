@@ -1,7 +1,7 @@
 import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
 import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots, getCameraColorByIndex, splitLowValue } from '../utils/stats'
-import { fmtDate, shortFilterName } from '../utils/format'
+import { fmtDate, headlineFilterName } from '../utils/format'
 
 const CHART_WIDTH = 652
 
@@ -254,7 +254,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle,
         <StatRow>
           {lensData[0]  && <Highlight label="Top Lens"     name={lensData[0].name}  pct={lensData[0].pct} />}
           {suppData[0]  && <Highlight label="Most Shot On"  name={suppData[0].name}  pct={suppData[0].pct} />}
-          {filtrData[0] && <Highlight label="Top Filter"    name={shortFilterName(filtrData[0].name)} pct={filtrData[0].pct} />}
+          {filtrData[0] && <Highlight label="Top Filter"    name={headlineFilterName(filtrData[0].name)} pct={filtrData[0].pct} />}
         </StatRow>
       )}
       {(stats.dateFirst || stats.busiestDay) && (() => {

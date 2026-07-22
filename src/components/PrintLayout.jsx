@@ -1,7 +1,7 @@
 import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
 import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots, getCameraColorByIndex, splitLowValue } from '../utils/stats'
-import { fmtDate } from '../utils/format'
+import { fmtDate, shortFilterName } from '../utils/format'
 
 const CHART_WIDTH = 652
 
@@ -55,12 +55,14 @@ function StatRow({ children }) {
   return <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>{children}</div>
 }
 
-// A "winner" highlight card: label, top item name (truncated), and its share.
+// A "winner" highlight card: label, top item name, and its share. The name wraps
+// up to two lines (a PDF card has the vertical room; nowrap-with-ellipsis was
+// cutting realistic lens names like "Angenieux Optimo 24-290mm" at this width).
 function Highlight({ label, name, pct }) {
   return (
     <div style={{ flex: 1, minWidth: 0, background: 'white', border: '1px solid #e8e3da', borderRadius: 10, padding: '12px 16px' }}>
       <div style={s.label}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1916', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...s.mono }}>{name}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1916', lineHeight: 1.25, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, wordBreak: 'break-word', ...s.mono }}>{name}</div>
       <div style={{ fontSize: 12, color: '#6b6762', marginTop: 3, ...s.mono }}>{pct.toFixed(1)}%</div>
     </div>
   )
@@ -252,7 +254,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle,
         <StatRow>
           {lensData[0]  && <Highlight label="Top Lens"     name={lensData[0].name}  pct={lensData[0].pct} />}
           {suppData[0]  && <Highlight label="Most Shot On"  name={suppData[0].name}  pct={suppData[0].pct} />}
-          {filtrData[0] && <Highlight label="Top Filter"    name={filtrData[0].name} pct={filtrData[0].pct} />}
+          {filtrData[0] && <Highlight label="Top Filter"    name={shortFilterName(filtrData[0].name)} pct={filtrData[0].pct} />}
         </StatRow>
       )}
       {(stats.dateFirst || stats.busiestDay) && (() => {

@@ -3,7 +3,7 @@ import {
   lensUsage, supportUsage, cameraUsage, filterUsage,
   takesPerDay, deduplicateShots, getCameraColorByIndex,
 } from '../utils/stats'
-import { fmtDate } from '../utils/format'
+import { fmtDate, shortFilterName } from '../utils/format'
 import { CARD_SIZE, FORMAT_GEOMETRY } from './shareCardSize'
 import { MONO, buildTheme } from './shareThemes'
 
@@ -103,7 +103,11 @@ function FitText({ text, maxSize, weight = 700, style }) {
       if (cancelled) return
       const box = boxRef.current
       if (!box) return
-      const avail = box.clientWidth
+      // 3% reserve: DM Mono ships no 700 weight, so the DOM renders a
+      // synthesized bold that iOS draws slightly wider than canvas measureText
+      // reports. Fitting against a reduced budget keeps the DOM render from
+      // tipping into the ellipsis backstop on those devices.
+      const avail = box.clientWidth * 0.97
       if (!avail) return   // not yet laid out — ResizeObserver will retry
 
       const wFull = measureWidth(text, maxSize)
@@ -311,13 +315,6 @@ function cameraLegendText(cam) {
   return cam.model ? `${cam.name} · ${cam.model}` : `${cam.name} CAMERA`
 }
 
-// Camera-department shorthand for share cards: INTERNAL/EXTERNAL ND reads as
-// INT/EXT ND. Keeps the strength — the part that matters — prominent at large
-// type instead of spending width on the long word. Display-only; the dashboard
-// keeps the full names.
-function shortFilterName(name) {
-  return name.replace(/\bINTERNAL\b/gi, 'INT').replace(/\bEXTERNAL\b/gi, 'EXT')
-}
 
 function cameraRowSizing(n, portrait, scale = 1) {
   // Design-confirmed baselines: full-size values that fit at threshold n.

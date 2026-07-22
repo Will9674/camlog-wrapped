@@ -311,6 +311,14 @@ function cameraLegendText(cam) {
   return cam.model ? `${cam.name} · ${cam.model}` : `${cam.name} CAMERA`
 }
 
+// Camera-department shorthand for share cards: INTERNAL/EXTERNAL ND reads as
+// INT/EXT ND. Keeps the strength — the part that matters — prominent at large
+// type instead of spending width on the long word. Display-only; the dashboard
+// keeps the full names.
+function shortFilterName(name) {
+  return name.replace(/\bINTERNAL\b/gi, 'INT').replace(/\bEXTERNAL\b/gi, 'EXT')
+}
+
 function cameraRowSizing(n, portrait, scale = 1) {
   // Design-confirmed baselines: full-size values that fit at threshold n.
   // Scaled down for the shorter Feed canvas (see FORMAT_GEOMETRY.scale).
@@ -495,12 +503,13 @@ function DaysView({ perDayData, stats, portrait }) {
 
 function FiltersView({ filtrData, portrait, listRows }) {
   if (!filtrData.length) return <EmptyCard label="No filter data recorded" />
-  const top = filtrData[0]
+  const data = filtrData.map((d) => ({ ...d, name: shortFilterName(d.name) }))
+  const top = data[0]
   return (
     <>
       <HeroContent label="Top Filter" name={top.name} pct={top.pct} count={top.count} portrait={portrait} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: portrait ? 'hidden' : 'visible', ...(portrait ? {} : { justifyContent: 'flex-end' }) }}>
-        <BarList data={filtrData} topN={listRows} portrait={portrait} />
+        <BarList data={data} topN={listRows} portrait={portrait} />
       </div>
     </>
   )
@@ -563,7 +572,7 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
   const winners = [
     lens && { key: 'lens',   label: 'Top Lens',      name: lens.name, pct: lens.pct },
     supp && { key: 'supp',   label: 'Most Shot On',  name: supp.name, pct: supp.pct },
-    filt && { key: 'filter', label: 'Top Filter',    name: filt.name, pct: filt.pct },
+    filt && { key: 'filter', label: 'Top Filter',    name: shortFilterName(filt.name), pct: filt.pct },
   ].filter(Boolean)
 
   const statSz      = portrait ? t.sc(46) : 34
@@ -576,7 +585,10 @@ function SummaryView({ lensData, suppData, camData, filtrData, stats, portrait }
   const innerW       = CARD_SIZE - (portrait ? 96 : 40)
   const maxWinLen    = Math.max(...winners.map((w) => w.name.length), 1)
   const maxWinPctLen = Math.max(...winners.map((w) => `${w.pct.toFixed(1)}%`.length), 1)
-  const winnerFitSz  = Math.max(15, Math.min(baseWinnerSz, Math.floor((innerW - 16) / ((maxWinLen + maxWinPctLen) * 0.62))))
+  // 0.65 (not 0.62): the winner rows are fontWeight 700, but DM Mono only
+  // ships up to 500, so browsers synthesize the bold — and iOS CoreText
+  // widens glyphs slightly when it does. The extra margin absorbs that.
+  const winnerFitSz  = Math.max(15, Math.min(baseWinnerSz, Math.floor((innerW - 16) / ((maxWinLen + maxWinPctLen) * 0.65))))
 
   return (
     <>

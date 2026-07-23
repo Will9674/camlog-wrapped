@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import UploadScreen from './components/UploadScreen'
 import Dashboard from './components/Dashboard'
 import { parseCSV, parseCSVString, processData } from './utils/parseCSV'
+import { sampleCsv, SAMPLE_TITLE } from './utils/sampleData'
 
 export default function App() {
   const [rows, setRows] = useState(null)
@@ -20,6 +21,13 @@ export default function App() {
   }
 
   async function handleFile(file) {
+    if (!file) return
+    // Only CSV exports from CamLog / ZoeLog are supported — reject anything else
+    // up front with a friendly, specific message instead of a silent no-op.
+    if (!/\.csv$/i.test(file.name)) {
+      setError('CamLog Wrapped reads .csv logs exported from CamLog or ZoeLog. That file isn’t a CSV.')
+      return
+    }
     setLoading(true)
     setError(null)
     window.location.hash = ''
@@ -27,18 +35,22 @@ export default function App() {
       const raw = await parseCSV(file)
       const processed = processData(raw)
       if (!processed.some((r) => r._scene)) {
-        setError("This doesn't look like a camera log CSV file.")
+        setError('That CSV isn’t a CamLog or ZoeLog log. Export your project from either app and try again.')
         return
       }
       setRows(processed)
       setProjectTitle(titleFromFilename(file.name))
       setLoadId((n) => n + 1)
     } catch (e) {
-      setError('Failed to parse CSV. Please check the file format.')
+      setError('That file couldn’t be read as a CSV. Export a fresh log from CamLog or ZoeLog and try again.')
       console.error(e)
     } finally {
       setLoading(false)
     }
+  }
+
+  function loadDemo() {
+    ingestCsvString(sampleCsv(), SAMPLE_TITLE)
   }
 
   async function ingestCsvString(csvStr, name) {
@@ -49,7 +61,7 @@ export default function App() {
       const raw = await parseCSVString(csvStr)
       const processed = processData(raw)
       if (!processed.some((r) => r._scene)) {
-        setError("This doesn't look like a camera log CSV file.")
+        setError('That CSV isn’t a CamLog or ZoeLog log. Export your project from either app and try again.')
         return
       }
       setRows(processed)
@@ -90,14 +102,5 @@ export default function App() {
     return <Dashboard key={loadId} rows={rows} projectTitle={projectTitle} onReset={handleReset} />
   }
 
-  return (
-    <div>
-      {error && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-(--c-surface) border border-(--c-border) text-(--c-ink) text-sm font-['DM_Mono'] px-4 py-2 rounded shadow-sm z-50">
-          {error}
-        </div>
-      )}
-      <UploadScreen onFile={handleFile} loading={loading} />
-    </div>
-  )
+  return <UploadScreen onFile={handleFile} onDemo={loadDemo} loading={loading} error={error} />
 }

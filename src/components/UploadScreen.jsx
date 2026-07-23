@@ -8,21 +8,21 @@ const wrappedTextStyle = {
   backgroundClip: 'text',
 }
 
-export default function UploadScreen({ onFile, loading }) {
+export default function UploadScreen({ onFile, onDemo, loading, error }) {
   const inputRef = useRef()
   const [dragging, setDragging] = useState(false)
 
+  // Pass every dropped/selected file straight to App, which validates the type
+  // and surfaces a friendly message — so an unsupported file is never a silent
+  // no-op the way an extension gate here would be.
   function handleFile(file) {
-    if (file && file.name.endsWith('.csv')) {
-      onFile(file)
-    }
+    if (file) onFile(file)
   }
 
   function onDrop(e) {
     e.preventDefault()
     setDragging(false)
-    const file = e.dataTransfer.files[0]
-    handleFile(file)
+    handleFile(e.dataTransfer.files[0])
   }
 
   return (
@@ -71,6 +71,9 @@ export default function UploadScreen({ onFile, loading }) {
               <p className="text-(--c-ink) text-sm font-['DM_Sans'] font-medium">
                 Attach CSV here
               </p>
+              <p className="text-xs text-(--c-ink3) font-['DM_Mono']">
+                Export from CamLog or ZoeLog
+              </p>
             </div>
           </div>
 
@@ -81,6 +84,39 @@ export default function UploadScreen({ onFile, loading }) {
             className="hidden"
             onChange={(e) => handleFile(e.target.files[0])}
           />
+
+          {/* Friendly, specific message for an unsupported / unrecognized file */}
+          {error && (
+            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-(--c-accent)/40 bg-(--c-accent)/5 px-3.5 py-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-(--c-accent) flex-shrink-0 mt-0.5">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <p className="text-xs text-(--c-ink) font-['DM_Mono'] leading-relaxed">{error}</p>
+            </div>
+          )}
+
+          {/* Try it without your own log */}
+          <p className="mt-5 text-center text-xs text-(--c-ink2) font-['DM_Sans']">
+            Don’t have a log handy?{' '}
+            <button
+              onClick={() => !loading && onDemo?.()}
+              className="text-(--c-accent) font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+              disabled={loading}
+            >
+              See a sample →
+            </button>
+          </p>
+
+          {/* Privacy: the whole pipeline runs client-side; nothing is uploaded */}
+          <div className="mt-10 flex items-center justify-center gap-1.5 text-(--c-ink3)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <p className="text-[11px] font-['DM_Mono']">
+              Your logs never leave your device
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -35,7 +35,7 @@ export default function App() {
       const raw = await parseCSV(file)
       const processed = processData(raw)
       if (!processed.some((r) => r._scene)) {
-        setError('That CSV isn’t a CamLog or ZoeLog log. Export your project from either app and try again.')
+        setError('That CSV isn’t from CamLog or ZoeLog. Export your project from either app and try again.')
         return
       }
       setRows(processed)
@@ -61,7 +61,7 @@ export default function App() {
       const raw = await parseCSVString(csvStr)
       const processed = processData(raw)
       if (!processed.some((r) => r._scene)) {
-        setError('That CSV isn’t a CamLog or ZoeLog log. Export your project from either app and try again.')
+        setError('That CSV isn’t from CamLog or ZoeLog. Export your project from either app and try again.')
         return
       }
       setRows(processed)

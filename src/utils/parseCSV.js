@@ -61,9 +61,9 @@ const SUPPORT_RULES = [
   // spelling so both fold into the one category rather than splitting the count.
   { label: 'Hi-Hat',        pattern: /\b(?:high|hi)[\s-]?hat\b/i },
   { label: 'Low Hat',       pattern: /\blow[\s-]?hat\b/i },
-  // Sticks / Stick / Baby Sticks / Standard Sticks / Standards / Babies
+  // Sticks / Stick / Stix / Baby Sticks / Standard Sticks / Standards / Babies
   // Excludes slate clapper notations: No Sticks, 2nd Sticks, Mid Sticks, Tail Sticks, Head Sticks
-  { label: 'Sticks',        pattern: /(?:(?<!(?:no|2nd|mid|tail|head)\s)\bsticks?\b|\bbaby[\s-]+sticks?\b|\bstandard[\s-]+sticks?\b|\bstandards\b|\bbabies\b)/i },
+  { label: 'Sticks',        pattern: /(?:(?<!(?:no|2nd|mid|tail|head)\s)\b(?:sticks?|stix)\b|\bbaby[\s-]+(?:sticks?|stix)\b|\bstandard[\s-]+(?:sticks?|stix)\b|\bstandards\b|\bbabies\b)/i },
   { label: 'Rickshaw',      pattern: /\brick[\s-]?shaw\b/i },
   { label: 'Slider',        pattern: /\bslider\b/i },
   { label: 'Dolly',         pattern: /\bdolly\b/i },
@@ -78,6 +78,10 @@ const SUPPORT_RULES = [
   // Gimbal / Gimble
   { label: 'Gimbal',        pattern: /\bgimb[ae]l\b/i },
   { label: 'Drone',         pattern: /\bdrone\b/i },
+  // Rigged to a vehicle: hostess tray, hood / hard / trailer / car / suction
+  // mount, biscuit rig, "rig on hood", "mounted to trailer". Last in this tier,
+  // so a named rig riding on the car ("slider on hostess tray") keeps its name.
+  { label: 'Car Mount',     pattern: /\bhostess[\s-]?tray\b|\b(?:hood|hard|trailer|car|suction)[\s-]?mount|\bbiscuit\b|\bon\s+(?:the\s+)?hood\b|\bmounted\s+(?:to|on)\s+(?:the\s+|a\s+)?trailer\b/i },
 
   // ── Tier 2: housings ──────────────────────────────────────────────────────
   // Underwater housings. The brand name is usually dropped on the day — a bare

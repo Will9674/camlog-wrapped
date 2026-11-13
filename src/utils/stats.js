@@ -33,25 +33,16 @@ export function filterRows(rows, { cameras, dateRange }) {
   return filtered
 }
 
+// One row per SHOT: a camera's setup on a scene, that day. Four cameras on
+// 404B are four shots — each has its own lens, filters and support. A card
+// carried onto the next roll stays one shot (camera + scene + day match).
+const shotKey = (r) => `${r._camera}||${r._scene}||${r._date}`
+
 export function deduplicateShots(rows) {
   const seen = new Set()
   return rows.filter((r) => {
     if (!r._scene) return false
-    const key = `${r._scene}||${r._date}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-}
-
-// One row per camera per setup. Use this for anything a camera carries itself —
-// lens, filters, support — since on a multi-camera shot A and B cam each have
-// their own; deduplicateShots would keep whichever camera's row came first.
-export function deduplicateCameraShots(rows) {
-  const seen = new Set()
-  return rows.filter((r) => {
-    if (!r._scene) return false
-    const key = `${r._camera}||${r._scene}||${r._date}`
+    const key = shotKey(r)
     if (seen.has(key)) return false
     seen.add(key)
     return true
@@ -66,12 +57,12 @@ export function summaryStats(rows, filters) {
 
   const totalTakes = filtered.length
 
-  // Build a map of date → unique scenes to derive shot/day counts
+  // Build a map of date → unique shots (see shotKey) to derive shot/day counts
   const scenesPerDay = {}
   filtered.forEach((r) => {
     if (!r._date || !r._scene) return
     if (!scenesPerDay[r._date]) scenesPerDay[r._date] = new Set()
-    scenesPerDay[r._date].add(r._scene)
+    scenesPerDay[r._date].add(shotKey(r))
   })
 
   const shootingDays = Object.keys(scenesPerDay).length
@@ -171,7 +162,7 @@ const rangeOf = (s) => {
   return m && `${parseFloat(m[1])}-${parseFloat(m[2])}`
 }
 
-// Expects setup rows (deduplicateCameraShots), not takes.
+// Expects shot rows (deduplicateShots), not takes.
 export function lensUsage(rows) {
   let unknownCount = 0
   const totalSetups = rows.length

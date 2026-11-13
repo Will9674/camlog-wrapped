@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useCallback, useLayoutEffect, createContext, useContext } from 'react'
 import {
   lensUsage, supportUsage, cameraUsage, filterUsage,
-  takesPerDay, deduplicateShots, deduplicateCameraShots, getCameraColorByIndex,
+  takesPerDay, deduplicateShots, getCameraColorByIndex,
 } from '../utils/stats'
 import { fmtDate, shortFilterName, headlineFilterName } from '../utils/format'
 import { CARD_SIZE, FORMAT_GEOMETRY } from './shareCardSize'
@@ -758,11 +758,10 @@ export function ShareCardContent({ viewId, rows, stats, projectTitle, format = '
     return { ...base, scale, sc: (n) => Math.round(n * scale) }
   }, [theme, scale])
   const shotsRows  = useMemo(() => deduplicateShots(rows), [rows])
-  const setupRows  = useMemo(() => deduplicateCameraShots(rows), [rows])
-  const lensData   = useMemo(() => lensUsage(setupRows), [setupRows])
-  const suppData   = useMemo(() => supportUsage(setupRows), [setupRows])
+  const lensData   = useMemo(() => lensUsage(shotsRows), [shotsRows])
+  const suppData   = useMemo(() => supportUsage(shotsRows), [shotsRows])
   const camData    = useMemo(() => cameraUsage(rows), [rows])
-  const filtrData  = useMemo(() => filterUsage(setupRows), [setupRows])
+  const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
 
   // The tall row counts (geo.listRows/camRows) are the single-line-title optimum. A

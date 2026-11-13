@@ -1,6 +1,6 @@
 import { useMemo, forwardRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, LabelList, Cell } from 'recharts'
-import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots, deduplicateCameraShots, getCameraColorByIndex, splitLowValue } from '../utils/stats'
+import { lensUsage, supportUsage, filterUsage, cameraUsage, takesPerDay, deduplicateShots, getCameraColorByIndex, splitLowValue } from '../utils/stats'
 import { fmtDate, headlineFilterName } from '../utils/format'
 
 const CHART_WIDTH = 652
@@ -191,11 +191,10 @@ function VertPrintChart({ data }) {
 
 const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle, filterContext }, ref) {
   const shotsRows      = useMemo(() => deduplicateShots(rows), [rows])
-  const setupRows      = useMemo(() => deduplicateCameraShots(rows), [rows])
-  const { data: lensData, unknownCount: lensUnknown, totalSetups: lensSetups } = useMemo(() => lensUsage(setupRows), [setupRows])
-  const suppData       = useMemo(() => supportUsage(setupRows), [setupRows])
-  const suppExcluded   = useMemo(() => setupRows.length - suppData.reduce((s, d) => s + d.count, 0), [setupRows, suppData])
-  const filtrData  = useMemo(() => filterUsage(setupRows), [setupRows])
+  const { data: lensData, unknownCount: lensUnknown, totalSetups: lensSetups } = useMemo(() => lensUsage(shotsRows), [shotsRows])
+  const suppData       = useMemo(() => supportUsage(shotsRows), [shotsRows])
+  const suppExcluded   = useMemo(() => shotsRows.length - suppData.reduce((s, d) => s + d.count, 0), [shotsRows, suppData])
+  const filtrData  = useMemo(() => filterUsage(shotsRows), [shotsRows])
   const camData    = useMemo(() => cameraUsage(rows), [rows])
   const perDayData = useMemo(() => takesPerDay(shotsRows), [shotsRows])
   const generatedOn = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -290,7 +289,7 @@ const PrintLayout = forwardRef(function PrintLayout({ rows, stats, projectTitle,
           <HorizPrintChart data={suppData} />
           {suppExcluded > 0 && (
             <div style={{ marginTop: 12, fontSize: 9, fontFamily: 'DM Mono, monospace', color: '#a09e99' }}>
-              {suppExcluded} of {setupRows.length} shots ({Math.round((suppExcluded / setupRows.length) * 100)}%) had no recognized camera support data and are not shown.
+              {suppExcluded} of {shotsRows.length} shots ({Math.round((suppExcluded / shotsRows.length) * 100)}%) had no recognized camera support data and are not shown.
             </div>
           )}
         </SectionCard>

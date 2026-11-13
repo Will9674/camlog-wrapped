@@ -1,9 +1,9 @@
 import SummaryBar from '../components/SummaryBar'
 import HorizBarChart from '../components/HorizBarChart'
-import { lensUsage, deduplicateCameraShots } from '../utils/stats'
+import { lensUsage, deduplicateShots } from '../utils/stats'
 
 export default function LensView({ rows, stats }) {
-  const { data, unknownCount, totalSetups: totalShots } = lensUsage(deduplicateCameraShots(rows))
+  const { data, unknownCount, totalSetups: totalShots } = lensUsage(deduplicateShots(rows))
   const highlight = data[0] && { label: 'Top Lens', value: `${data[0].name} · ${data[0].pct.toFixed(1)}%` }
 
   return (

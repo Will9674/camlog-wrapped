@@ -1,9 +1,9 @@
 import SummaryBar from '../components/SummaryBar'
 import HorizBarChart from '../components/HorizBarChart'
-import { supportUsage, deduplicateCameraShots } from '../utils/stats'
+import { supportUsage, deduplicateShots } from '../utils/stats'
 
 export default function SupportView({ rows, stats }) {
-  const dedupedRows = deduplicateCameraShots(rows)
+  const dedupedRows = deduplicateShots(rows)
   const data = supportUsage(dedupedRows)
   const totalShots = dedupedRows.length
   const includedShots = data.reduce((s, d) => s + d.count, 0)

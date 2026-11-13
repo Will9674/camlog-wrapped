@@ -44,6 +44,20 @@ export function deduplicateShots(rows) {
   })
 }
 
+// One row per camera per setup. Use this for anything a camera carries itself —
+// lens, filters, support — since on a multi-camera shot A and B cam each have
+// their own; deduplicateShots would keep whichever camera's row came first.
+export function deduplicateCameraShots(rows) {
+  const seen = new Set()
+  return rows.filter((r) => {
+    if (!r._scene) return false
+    const key = `${r._camera}||${r._scene}||${r._date}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 // Computes summary stats for the current filter state.
 // Returns: { totalTakes, totalShots, shootingDays, avgTakesPerDay, avgShotsPerDay,
 //            dateFirst, dateLast, busiestDay }
@@ -124,33 +138,85 @@ export function cameraUsage(rows) {
   )
 }
 
+// A zoom's own range, as CamLog lens presets write it: "24-290MM", "19-94mm".
+// The first number has no "mm", which is what separates it from a logged focal
+// range like "98mm-123mm".
+const ZOOM_RANGE = /(?:^|[^\d.])\d+(?:\.\d+)?\s*-\s*\d+(?:\.\d+)?\s*mm\b/i
+// What a crew member logs in front of a zoom's name: a focal ("75mm"), a focal
+// range ("98mm-123mm"), "Var."/"Various", or an extender ("2x Ext").
+const ZOOM_PREFIX = /^(?:\d+(?:\.\d+)?(?:\s*mm)?(?:\s*-\s*\d+(?:\.\d+)?\s*mm)?|var(?:ious|\.)?|\d+(?:\.\d+)?x\s*ext(?:end(?:er)?)?\.?)\s+/i
+
 function normalizeLens(raw) {
-  let s = raw.trim()
+  let s = raw.trim().replace(/\s+/g, ' ')
   if (!s) return null
   if (/^zooms?$/i.test(s)) return null
   // Strip redundant ".mm" or extra "mm" appended after a valid focal length: "35mm .mm" → "35mm"
   s = s.replace(/(\d+mm)\s*[.,]?\s*mm\b/gi, '$1').trim()
+  // "35MM" / "35 mm" → "35mm"
+  s = s.replace(/(\d)\s*mm\b/gi, '$1mm')
+  // Stray dashes typed after the lens: "24mm-290mm − - -"
+  s = s.replace(/[\s\-−–—]+$/, '')
+  // One bar per zoom: drop the focal/Var/extender logged in front of its name.
+  while (ZOOM_RANGE.test(s)) {
+    const next = s.replace(ZOOM_PREFIX, '')
+    if (next === s || !ZOOM_RANGE.test(next)) break
+    s = next
+  }
   return s || null
 }
 
+const BARE_RANGE = /^(\d+(?:\.\d+)?)(?:mm)?\s*-\s*(\d+(?:\.\d+)?)(?:mm)?$/i
+const rangeOf = (s) => {
+  const m = s.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*mm\b/i)
+  return m && `${parseFloat(m[1])}-${parseFloat(m[2])}`
+}
+
+// Expects setup rows (deduplicateCameraShots), not takes.
 export function lensUsage(rows) {
   let unknownCount = 0
+  const totalSetups = rows.length
   const counts = {}
+  const spellings = {}
   rows.forEach((r) => {
     const tokens = (r._lens || '').split(',').map(l => normalizeLens(l)).filter(Boolean)
     if (tokens.length === 0) {
       unknownCount++
-    } else {
-      tokens.forEach(l => { counts[l] = (counts[l] || 0) + 1 })
+      return
     }
+    tokens.forEach((l) => {
+      // "Cooke S4" and "cooke s4" are one lens; show whichever spelling was logged most.
+      const k = l.toLowerCase()
+      counts[k] = (counts[k] || 0) + 1
+      spellings[k] = spellings[k] || {}
+      spellings[k][l] = (spellings[k][l] || 0) + 1
+    })
+  })
+  // A bare "24mm-290mm" can only be a zoom with exactly that range — no prime
+  // covers one. Fold it in when one zoom in the project matches; with two
+  // matching zooms (or none) it stays its own bar rather than guess.
+  // Bare primes ("50mm") are never folded: several sets can share a focal.
+  const zoomsByRange = {}
+  Object.keys(counts).forEach((k) => {
+    if (BARE_RANGE.test(k)) return
+    const range = rangeOf(k)
+    if (range) (zoomsByRange[range] = zoomsByRange[range] || []).push(k)
+  })
+  Object.keys(counts).forEach((k) => {
+    const m = k.match(BARE_RANGE)
+    if (!m) return
+    const zooms = zoomsByRange[`${parseFloat(m[1])}-${parseFloat(m[2])}`]
+    if (zooms?.length !== 1) return
+    counts[zooms[0]] += counts[k]
+    delete counts[k]
   })
   const total = Object.values(counts).reduce((s, c) => s + c, 0)
+  const nameFor = (k) => Object.entries(spellings[k]).sort((a, b) => b[1] - a[1])[0][0]
   const data = roundTo100(
     Object.entries(counts)
-      .map(([lens, count]) => ({ name: lens, count, pct: total ? (count / total) * 100 : 0 }))
+      .map(([k, count]) => ({ name: nameFor(k), count, pct: total ? (count / total) * 100 : 0 }))
       .sort((a, b) => b.count - a.count)
   )
-  return { data, unknownCount }
+  return { data, unknownCount, totalSetups }
 }
 
 export function supportUsage(rows) {

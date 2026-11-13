@@ -36,6 +36,18 @@ export function parseCSVString(str) {
 // New entries go in the tier they belong to, not simply at the end.
 const SUPPORT_RULES = [
   // ── Tier 1: camera support ────────────────────────────────────────────────
+  // Vehicle rigs FIRST: the car is the platform, so whatever rides on it — a
+  // slider on a hostess tray, handheld on a biscuit — is a car shot. Each named
+  // rig is its own entry, like Technocrane vs Crane; plain Car Mount is the
+  // catch-all after them. Biscuit first: the picture car rides the platform,
+  // whatever is rigged on it. "On the hood" needs a rig or camera as its
+  // subject, so "actor sits on the hood" can't outrank a real support note.
+  { label: 'Biscuit Rig',   pattern: /\bbiscuit\b/i },
+  { label: 'Hostess Tray',  pattern: /\bhostess[\s-]?tray\b/i },
+  { label: 'Hood Mount',    pattern: /\bhood[\s-]?mount|\b(?:rig|cameras?|mounted)\s+on\s+(?:the\s+)?hood\b/i },
+  // A camera on a towed trailer (plates), incl. "hard mounted to trailer".
+  { label: 'Trailer Mount', pattern: /\btrailer[\s-]?mount|\bmounted\s+(?:to|on)\s+(?:the\s+|a\s+)?trailer\b/i },
+  { label: 'Car Mount',     pattern: /\b(?:hard|car|suction)[\s-]?mount/i },
   { label: 'Dana Dolly',    pattern: /\bdana[\s-]?dolly\b/i },
   { label: 'Mini Libra',    pattern: /\bmini[\s-]?libra\b/i },
   { label: 'Mini Scope',    pattern: /\bmini[\s-]?scope\b/i },
@@ -78,10 +90,6 @@ const SUPPORT_RULES = [
   // Gimbal / Gimble
   { label: 'Gimbal',        pattern: /\bgimb[ae]l\b/i },
   { label: 'Drone',         pattern: /\bdrone\b/i },
-  // Rigged to a vehicle: hostess tray, hood / hard / trailer / car / suction
-  // mount, biscuit rig, "rig on hood", "mounted to trailer". Last in this tier,
-  // so a named rig riding on the car ("slider on hostess tray") keeps its name.
-  { label: 'Car Mount',     pattern: /\bhostess[\s-]?tray\b|\b(?:hood|hard|trailer|car|suction)[\s-]?mount|\bbiscuit\b|\bon\s+(?:the\s+)?hood\b|\bmounted\s+(?:to|on)\s+(?:the\s+|a\s+)?trailer\b/i },
 
   // ── Tier 2: housings ──────────────────────────────────────────────────────
   // Underwater housings. The brand name is usually dropped on the day — a bare

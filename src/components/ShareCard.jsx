@@ -516,6 +516,37 @@ function CameraView({ camData, portrait, camRows }) {
   )
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// Labels under the Days chart when there are too many bars for a date each:
+// the month name under the first bar of each month. A shoot inside one month
+// gets its first and last date instead. `pitch` is one bar's width in px, used
+// to drop a label that would run into the next (keeping the later, fuller month).
+function monthMarkers(days, pitch) {
+  if (!days.length) return []
+  const parts = days.map((d) => (d.name || '').split('-').map(Number))
+  const monthOf = ([y, m]) => `${y}-${m}`
+  if (monthOf(parts[0]) === monthOf(parts[parts.length - 1])) {
+    const fmt = ([, m, d]) => `${MONTHS[m - 1]} ${d}`
+    return days.length > 1
+      ? [{ i: 0, label: fmt(parts[0]) }, { i: days.length - 1, label: fmt(parts[parts.length - 1]), align: 'right' }]
+      : [{ i: 0, label: fmt(parts[0]) }]
+  }
+  const marks = []
+  parts.forEach((p, i) => {
+    if (i > 0 && monthOf(p) === monthOf(parts[i - 1])) return
+    const mark = { i, label: MONTHS[p[1] - 1] }
+    const prev = marks[marks.length - 1]
+    if (prev && (i - prev.i) * pitch < 44) marks[marks.length - 1] = mark
+    else marks.push(mark)
+  })
+  // A month starting in the last few bars would run off the card: pin it to
+  // the right edge instead, ticked on that side.
+  const last = marks[marks.length - 1]
+  if (last && (days.length - last.i) * pitch < 20) last.align = 'right'
+  return marks
+}
+
 function DaysView({ perDayData, stats, portrait }) {
   const t = useT()
   const maxCount = Math.max(...perDayData.map((d) => d.count), 1)
@@ -530,7 +561,10 @@ function DaysView({ perDayData, stats, portrait }) {
   // Effective bar width at 504px inner portrait width — drives label visibility
   const effectiveBarW = portrait ? Math.max(1, (504 - (n - 1) * gapSize) / Math.max(n, 1)) : 0
   const showCountLabels = portrait && effectiveBarW >= 12
-  const showDateLabels  = portrait && effectiveBarW >= 8
+  // A date under every bar only when "10/10" fits whole (~18 days or fewer);
+  // below that they clipped to "9/", so longer shoots get month markers.
+  const showDateLabels  = portrait && effectiveBarW >= 26
+  const monthMarks      = portrait && !showDateLabels ? monthMarkers(perDayData, 504 / Math.max(n, 1)) : []
   const countLabelSz    = effectiveBarW >= 18 ? 11 : 9
 
   const formatDate = (d) => {
@@ -588,7 +622,30 @@ function DaysView({ perDayData, stats, portrait }) {
             ))}
           </div>
         )}
-        {portrait && !showDateLabels && (
+        {monthMarks.length > 0 && (
+          <div style={{ position: 'relative', height: 26, flexShrink: 0, marginTop: 4 }}>
+            {monthMarks.map((m) => {
+              // Left edge of bar i, matching the flex row above: bars share the
+              // width left after the gaps, and i gaps sit before bar i.
+              const left = m.align === 'right'
+                ? undefined
+                : `calc((100% - ${(n - 1) * gapSize}px) * ${m.i / n} + ${m.i * gapSize}px)`
+              return (
+                <div key={m.i} style={{
+                  position: 'absolute', top: 0, left, right: m.align === 'right' ? 0 : undefined,
+                  borderLeft: m.align === 'right' ? 'none' : `1px solid ${t.ink2}`,
+                  borderRight: m.align === 'right' ? `1px solid ${t.ink2}` : 'none',
+                  padding: m.align === 'right' ? '6px 5px 0 0' : '6px 0 0 5px',
+                  fontSize: 13, color: t.ink2, fontFamily: MONO, letterSpacing: '0.08em',
+                  textTransform: 'uppercase', whiteSpace: 'nowrap', lineHeight: 1,
+                }}>
+                  {m.label}
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {portrait && (
           <div style={{ textAlign: 'center', fontSize: 16, color: t.ink, fontFamily: MONO, letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 10, flexShrink: 0 }}>
             Shots Per Day
           </div>

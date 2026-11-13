@@ -558,13 +558,17 @@ function DaysView({ perDayData, stats, portrait }) {
     ? Math.max(1, n <= 30 ? 3 : n <= 60 ? 2 : 1)
     : Math.max(2, Math.floor(460 / Math.max(n, 1)) - 4)
 
-  // Effective bar width at 504px inner portrait width — drives label visibility
-  const effectiveBarW = portrait ? Math.max(1, (504 - (n - 1) * gapSize) / Math.max(n, 1)) : 0
+  // Inner chart width (canvas minus padding), and each bar's slot: the bar plus
+  // its gap. Square spaces a few bars far apart, so a date may spread into the
+  // gap beside its bar — the slot, not the bar, is what it has to fit in.
+  const innerW        = portrait ? 504 : 560
+  const pitch         = (innerW + gapSize) / Math.max(n, 1)
+  const effectiveBarW = Math.max(1, (innerW - (n - 1) * gapSize) / Math.max(n, 1))
   const showCountLabels = portrait && effectiveBarW >= 12
-  // A date under every bar only when "10/10" fits whole (~18 days or fewer);
+  // A date under every bar only when "10/10" fits whole (~16–18 days or fewer);
   // below that they clipped to "9/", so longer shoots get month markers.
-  const showDateLabels  = portrait && effectiveBarW >= 26
-  const monthMarks      = portrait && !showDateLabels ? monthMarkers(perDayData, 504 / Math.max(n, 1)) : []
+  const showDateLabels  = pitch >= 30
+  const monthMarks      = showDateLabels ? [] : monthMarkers(perDayData, pitch)
   const countLabelSz    = effectiveBarW >= 18 ? 11 : 9
 
   const formatDate = (d) => {
@@ -616,7 +620,8 @@ function DaysView({ perDayData, stats, portrait }) {
         {showDateLabels && (
           <div style={{ display: 'flex', gap: gapSize, flexShrink: 0, marginTop: 5 }}>
             {perDayData.map((d) => (
-              <div key={d.name} style={{ flex: 1, minWidth: 0, textAlign: 'center', fontSize: 9, color: t.ink2, fontFamily: MONO, overflow: 'hidden', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+              // Centred by flex so a date wider than its bar spills evenly into the gaps.
+              <div key={d.name} style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', fontSize: 9, color: t.ink2, fontFamily: MONO, whiteSpace: 'nowrap', lineHeight: 1.4 }}>
                 {formatDate(d.name)}
               </div>
             ))}

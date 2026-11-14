@@ -199,7 +199,9 @@ export default function ShareModal({ rows, stats, projectTitle, onClose }) {
       const out = await getPng()
       if (!out) throw new Error('render failed')
       try {
-        await navigator.share({ files: [out.file], title: projectTitle || 'CamLog Wrapped' })
+        // Image only. A title rides along as message text in Messages and
+        // similar apps, so the show name landed in the body unasked.
+        await navigator.share({ files: [out.file] })
         setShared(true)
         setTimeout(() => setShared(false), 2500)
       } catch (err) {

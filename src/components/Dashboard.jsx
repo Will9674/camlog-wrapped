@@ -205,9 +205,15 @@ function ScopeSheet({ onClose, canReset, onReset, children }) {
 export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }) {
   const [activeView, setActiveView] = useState('lens')
   // Stable identity: React re-attaches this ref to whichever tab becomes active,
-  // firing the callback to scroll it into view.
+  // firing the callback to bring it into view. Scrolls the chip strip sideways
+  // only: scrollIntoView also scrolls the page vertically, which opened the
+  // dashboard part-way down with the header out of sight.
   const activeTabRef = useCallback((el) => {
-    if (el) el.scrollIntoView({ inline: 'nearest', behavior: 'smooth' })
+    if (!el) return
+    const strip = el.parentElement
+    const s = strip.getBoundingClientRect(), r = el.getBoundingClientRect()
+    if (r.left < s.left) strip.scrollBy({ left: r.left - s.left - 16, behavior: 'smooth' })
+    else if (r.right > s.right) strip.scrollBy({ left: r.right - s.right + 16, behavior: 'smooth' })
   }, [])
   const [scopeOpen, setScopeOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)

@@ -66,10 +66,8 @@ function SidebarContents({ activeView, onNavClick, filters, onFiltersChange, dat
 const TITLE_SHELL =
   "flex-1 min-w-0 text-center lg:flex-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[40%] font-['DM_Mono'] text-base sm:text-xl font-medium tracking-tight [overflow-wrap:anywhere]"
 
-// Header action buttons with a word label (Share, PDF).
-const ACTION_BTN_BASE = "h-8 px-2.5 sm:px-3 min-w-[3rem] flex items-center justify-center rounded-full border font-['DM_Mono'] text-xs font-medium transition-colors"
-const ACTION_BTN_IDLE = 'border-(--c-border) text-(--c-ink) hover:border-(--c-border-strong) hover:bg-(--c-nav-hover-bg)'
-const ACTION_BTN = `${ACTION_BTN_BASE} ${ACTION_BTN_IDLE}`
+// Header Share button, labelled with a word rather than an icon.
+const ACTION_BTN = "h-8 px-2.5 sm:px-3 min-w-[3rem] flex items-center justify-center rounded-full border font-['DM_Mono'] text-xs font-medium transition-colors border-(--c-border) text-(--c-ink) hover:border-(--c-border-strong) hover:bg-(--c-nav-hover-bg)"
 
 function EditableTitle({ value, onChange }) {
   const [editing, setEditing] = useState(false)
@@ -296,46 +294,19 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
           </button>
           <ThemeToggleButton />
 
-          {/* Share and PDF carry words, not bare icons: a crew member mistook the
-              old icon row for each other and closed the show instead of exporting. */}
+          {/* One Share button for everything going out: card images and the PDF
+              report both live in the share sheet. A word, not an icon: a crew
+              member mistook the old icon row and closed the show instead. */}
           <button
             onClick={() => setShareOpen(true)}
             className={ACTION_BTN}
-            aria-label="Share as image"
+            aria-label="Share images or PDF"
           >
             Share
           </button>
 
-          {/* Export PDF button */}
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className={`${ACTION_BTN_BASE} ${
-              exportError
-                ? 'border-transparent text-(--c-accent) bg-(--c-accent)/10'
-                : exported
-                ? 'border-transparent text-(--c-accent) bg-(--c-accent)/10'
-                : exporting
-                ? 'border-transparent text-(--c-accent) bg-(--c-accent)/10 cursor-default'
-                : ACTION_BTN_IDLE
-            }`}
-            aria-label={exportError ? 'Export failed' : 'Export PDF'}
-          >
-            {exporting ? (
-              <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
-            ) : exportError ? (
-              '!'   // not an ✕: that's the Close button's glyph now
-            ) : exported ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            ) : (
-              'PDF'
-            )}
-          </button>
-
           {/* Close the show, set apart by a divider so it can't be hit as a
-              neighbour of PDF. An ✕, not a log-out arrow: there's no account. */}
+              neighbour of Share. An ✕, not a log-out arrow: there's no account. */}
           <span className="w-px h-5 bg-(--c-border)" aria-hidden="true" />
           <button
             onClick={onReset}
@@ -404,6 +375,7 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
         stats={stats}
         projectTitle={projectTitle}
         onClose={() => setShareOpen(false)}
+        pdf={{ onExport: handleExport, exporting, exported, exportError }}
       />
     )}
     {exporting && (

@@ -64,7 +64,12 @@ function SidebarContents({ activeView, onNavClick, filters, onFiltersChange, dat
 // plumbing. Deliberately not persisted: a re-upload re-derives the title, and a stale
 // override would be harder to explain than retyping it.
 const TITLE_SHELL =
-  "flex-1 min-w-0 text-center sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 font-['DM_Mono'] text-xl font-medium tracking-tight"
+  "flex-1 min-w-0 text-center lg:flex-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 font-['DM_Mono'] text-base sm:text-xl font-medium tracking-tight [overflow-wrap:anywhere]"
+
+// Header action buttons with a word label (Share, PDF).
+const ACTION_BTN_BASE = "h-8 px-2.5 sm:px-3 min-w-[3rem] flex items-center justify-center rounded-full border font-['DM_Mono'] text-xs font-medium transition-colors"
+const ACTION_BTN_IDLE = 'border-(--c-border) text-(--c-ink) hover:border-(--c-border-strong) hover:bg-(--c-nav-hover-bg)'
+const ACTION_BTN = `${ACTION_BTN_BASE} ${ACTION_BTN_IDLE}`
 
 function EditableTitle({ value, onChange }) {
   const [editing, setEditing] = useState(false)
@@ -97,7 +102,7 @@ function EditableTitle({ value, onChange }) {
         }}
         maxLength={60}
         aria-label="Project title"
-        className={`${TITLE_SHELL} w-full sm:w-96 bg-transparent text-(--c-ink) border-b border-(--c-accent) outline-none px-1 py-0.5`}
+        className={`${TITLE_SHELL} w-full lg:w-96 bg-transparent text-(--c-ink) border-b border-(--c-accent) outline-none px-1 py-0.5`}
       />
     )
   }
@@ -263,7 +268,7 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
     <>
     <div className="min-h-screen flex flex-col bg-(--c-bg) no-print">
       {/* Top bar */}
-      <header className="relative bg-(--c-surface) border-b border-(--c-border) px-10 sm:px-12 h-14 flex items-center justify-between flex-shrink-0">
+      <header className="relative bg-(--c-surface) border-b border-(--c-border) px-4 sm:px-12 h-14 flex items-center justify-between gap-3 flex-shrink-0">
         <span className="hidden sm:block text-base text-(--c-ink)" style={{fontFamily: '-apple-system,"system-ui","Segoe UI",Helvetica,Arial,sans-serif', fontWeight: 800, letterSpacing: '-0.025em'}}>
           Cam<span className="text-(--c-accent)">Log</span>{' '}
           <span style={{
@@ -277,7 +282,7 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
           }}>Wrapped</span>
         </span>
         <EditableTitle value={projectTitle} onChange={onTitleChange} />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen((s) => !s)}
             className="sm:hidden text-(--c-ink2) hover:text-(--c-ink) transition-colors"
@@ -291,47 +296,42 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
           </button>
           <ThemeToggleButton />
 
-          {/* Share as image button */}
+          {/* Share and PDF carry words, not bare icons: a crew member mistook the
+              old icon row for each other and closed the show instead of exporting. */}
           <button
             onClick={() => setShareOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors"
+            className={ACTION_BTN}
             aria-label="Share as image"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <path d="M3 9h18"/>
-              <path d="M9 21V9"/>
-            </svg>
+            Share
           </button>
 
           {/* Export PDF button */}
           <button
             onClick={handleExport}
             disabled={exporting}
-            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+            title="Export PDF"
+            className={`${ACTION_BTN_BASE} w-8 !px-0 !min-w-0 ${
               exportError
-                ? 'text-(--c-accent) bg-(--c-accent)/10'
+                ? 'border-transparent text-(--c-accent) bg-(--c-accent)/10'
                 : exported
-                ? 'text-(--c-accent) bg-(--c-accent)/10'
+                ? 'border-transparent text-(--c-accent) bg-(--c-accent)/10'
                 : exporting
-                ? 'text-(--c-accent) bg-(--c-accent)/10 cursor-default'
-                : 'text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg)'
+                ? 'border-transparent text-(--c-accent) bg-(--c-accent)/10 cursor-default'
+                : ACTION_BTN_IDLE
             }`}
             aria-label={exportError ? 'Export failed' : 'Export PDF'}
           >
             {exporting ? (
               <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
             ) : exportError ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+              '!'   // not an ✕: that's the Close button's glyph now
             ) : exported ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
@@ -339,15 +339,18 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
             )}
           </button>
 
+          {/* Close the show, set apart by a divider so it can't be hit as a
+              neighbour of PDF. An ✕, not a log-out arrow: there's no account. */}
+          <span className="w-px h-5 bg-(--c-border)" aria-hidden="true" />
           <button
             onClick={onReset}
             className="w-8 h-8 flex items-center justify-center rounded-full text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors"
-            aria-label="Back to upload"
+            aria-label="Close this show and load another file"
+            title="Close"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>

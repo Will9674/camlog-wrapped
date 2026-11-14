@@ -1,18 +1,49 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import UploadScreen from './components/UploadScreen'
 import Dashboard from './components/Dashboard'
-import { parseCSV, parseCSVString, processData } from './utils/parseCSV'
+import { parseCSVString, processData } from './utils/parseCSV'
 import { sampleCsv, SAMPLE_TITLE } from './utils/sampleData'
 import { toProjectTitle, titleFromFilename } from './utils/format'
+
+// The last show loaded, kept on this device so a reload brings it straight back.
+// iOS unloads a background Safari page to free memory — typically while the user
+// is in Messages sharing a card Wrapped just rendered — and on return the page
+// reloads. With the show held only in memory, that dropped them on the upload
+// screen. Stored as the raw CSV plus the title, so a restore re-parses exactly
+// what was loaded. Every access is guarded: no storage (private mode, quota
+// for a very large show) just means no restore, as before.
+const SAVED_KEY = 'wrapped:last-show'
+
+function readSaved() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SAVED_KEY) || 'null')
+    return saved && typeof saved.csv === 'string' ? saved : null
+  } catch { return null }
+}
+
+function writeSaved(saved) {
+  try {
+    if (saved) localStorage.setItem(SAVED_KEY, JSON.stringify(saved))
+    else localStorage.removeItem(SAVED_KEY)
+  } catch {
+    // Too big to keep: drop any older show rather than restore the wrong one.
+    try { localStorage.removeItem(SAVED_KEY) } catch { /* storage unavailable */ }
+  }
+}
 
 export default function App() {
   const [rows, setRows] = useState(null)
   const [projectTitle, setProjectTitle] = useState('')
-  const [loading, setLoading] = useState(false)
+  // Start in the loading state when a saved show is about to be restored, so the
+  // upload screen doesn't flash first.
+  const [loading, setLoading] = useState(() => !!readSaved())
   const [error, setError] = useState(null)
   // Bumped on every successful load so Dashboard remounts fresh for new data,
   // giving it a correct initial date range without syncing state in an effect.
   const [loadId, setLoadId] = useState(0)
+  // Only the newest load may land: a saved show restoring on open must not
+  // overwrite a CSV CamLog pushed in a moment later.
+  const latestLoad = useRef(0)
 
   async function handleFile(file) {
     if (!file) return
@@ -22,50 +53,45 @@ export default function App() {
       setError('CamLog Wrapped reads .csv logs exported from CamLog or ZoeLog. That file isn’t a CSV.')
       return
     }
-    setLoading(true)
-    setError(null)
-    window.location.hash = ''
+    let csv
     try {
-      const raw = await parseCSV(file)
-      const processed = processData(raw)
-      if (!processed.some((r) => r._scene)) {
-        setError('That CSV isn’t from CamLog or ZoeLog. Export your project from either app and try again.')
-        return
-      }
-      setRows(processed)
-      setProjectTitle(titleFromFilename(file.name))
-      setLoadId((n) => n + 1)
+      csv = await file.text()
     } catch (e) {
       setError('That file couldn’t be read as a CSV. Export a fresh log from CamLog or ZoeLog and try again.')
       console.error(e)
-    } finally {
-      setLoading(false)
+      return
     }
+    ingestCsvString(csv, titleFromFilename(file.name), { save: true })
   }
 
   function loadDemo() {
-    ingestCsvString(sampleCsv(), SAMPLE_TITLE)
+    // The demo isn't saved: a reload shouldn't reopen sample data over a real show.
+    ingestCsvString(sampleCsv(), toProjectTitle(SAMPLE_TITLE))
   }
 
-  async function ingestCsvString(csvStr, name) {
+  // `title` is final (already derived from a filename or project name).
+  async function ingestCsvString(csvStr, title, { save = false } = {}) {
+    const ticket = ++latestLoad.current
     setLoading(true)
     setError(null)
     window.location.hash = ''
     try {
       const raw = await parseCSVString(csvStr)
+      if (ticket !== latestLoad.current) return
       const processed = processData(raw)
       if (!processed.some((r) => r._scene)) {
         setError('That CSV isn’t from CamLog or ZoeLog. Export your project from either app and try again.')
         return
       }
       setRows(processed)
-      setProjectTitle(toProjectTitle(name))
+      setProjectTitle(title)
       setLoadId((n) => n + 1)
+      if (save) writeSaved({ csv: csvStr, title })
     } catch (e) {
-      setError('Failed to parse CSV. Please check the file format.')
+      setError('That file couldn’t be read as a CSV. Export a fresh log from CamLog or ZoeLog and try again.')
       console.error(e)
     } finally {
-      setLoading(false)
+      if (ticket === latestLoad.current) setLoading(false)
     }
   }
 
@@ -77,9 +103,11 @@ export default function App() {
     function onMessage(evt) {
       if (evt.origin !== 'https://app.camlog.app') return
       if (evt.data?.type !== 'camlog-import') return
-      ingestCsvString(evt.data.csv, evt.data.name)
+      ingestCsvString(evt.data.csv, toProjectTitle(evt.data.name), { save: true })
     }
     window.addEventListener('message', onMessage)
+    const saved = readSaved()
+    if (saved) ingestCsvString(saved.csv, saved.title)
     if (window.opener) {
       try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://app.camlog.app') } catch { /* opener gone or cross-origin — ignore */ }
     }
@@ -89,11 +117,19 @@ export default function App() {
   function handleReset() {
     setRows(null)
     setProjectTitle('')
+    writeSaved(null)
     window.location.hash = ''
   }
 
+  // A renamed title is kept with the saved show, so a restore keeps the rename.
+  function handleTitleChange(title) {
+    setProjectTitle(title)
+    const saved = readSaved()
+    if (saved) writeSaved({ ...saved, title })
+  }
+
   if (rows) {
-    return <Dashboard key={loadId} rows={rows} projectTitle={projectTitle} onTitleChange={setProjectTitle} onReset={handleReset} />
+    return <Dashboard key={loadId} rows={rows} projectTitle={projectTitle} onTitleChange={handleTitleChange} onReset={handleReset} />
   }
 
   return <UploadScreen onFile={handleFile} onDemo={loadDemo} loading={loading} error={error} />

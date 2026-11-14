@@ -234,31 +234,44 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
     try {
       await new Promise((r) => setTimeout(r, 400))
 
-      const { toPng } = await import('html-to-image')
-      const isMobile = window.innerWidth < 640
-      const exportOpts = { pixelRatio: isMobile ? 3 : 6, backgroundColor: '#f0ece4' }
-      await toPng(el, exportOpts)
-      const dataUrl = await toPng(el, exportOpts)
-
-      const img = new Image()
-      await new Promise((res) => { img.onload = res; img.src = dataUrl })
-
-      // Paginate onto standard A4 sheets (595 × 842 pt). Each of the layout's blocks
-      // (header, stat rows, section cards, footer) is placed individually with comfortable
-      // spacing, so a chart is never sliced across a page. Blocks are packed onto a page
-      // until the next won't fit; content pages after the first center their blocks
-      // vertically so a sheet isn't top-heavy with a blank bottom.
+      // Each block of the print layout (header, stat rows, each chart) is rendered
+      // on its own rather than the whole report as one image:
+      //  - Sharpness: a block renders at 4× on a computer (~380 dpi on A4), 3× on
+      //    a phone; side by side, 4× and 5× text is indistinguishable even zoomed.
+      //    One whole-report image hit html-to-image's 16,384px cap on a long
+      //    feature and was quietly shrunk.
+      //  - iPhones: Safari can't draw a canvas over ~16.7M pixels (a whole long
+      //    report at 3× was ~21M). Each block's scale is capped to stay under it.
+      //  - No freeze: rendering the whole report blocked the page for ~6s on a
+      //    long feature. When opened from CamLog this window shares CamLog's
+      //    thread (same site, opened as a popup), so CamLog froze too and
+      //    reported it. Small blocks with a pause between keep both responsive.
+      const { toPng, getFontEmbedCSS } = await import('html-to-image')
       const { jsPDF } = await import('jspdf')
-      const pageW = 595, pageH = 842, margin = 40, gap = 26
-      const scaleImg = img.naturalWidth / el.offsetWidth  // layout px → raster px (pixelRatio)
-      const toPt = pageW / el.offsetWidth                 // layout px → PDF points
+      const bg = '#f0ece4'
+      const target = window.innerWidth < 640 ? 3 : 4
+      const MAX_PIXELS = 16_000_000
+      const breathe = () => new Promise((r) => setTimeout(r, 0))
 
+      // Fonts are embedded once and reused for every block; the 1× pass warms
+      // up anything else html-to-image inlines on first use.
+      const fontEmbedCSS = await getFontEmbedCSS(el)
+      await toPng(el, { pixelRatio: 1, backgroundColor: bg, fontEmbedCSS })
+
+      // Paginate onto standard A4 sheets (595 × 842 pt). Each block is placed
+      // individually with comfortable spacing, so a chart is never sliced across a
+      // page. Blocks are packed onto a page until the next won't fit; content pages
+      // after the first center their blocks vertically so a sheet isn't top-heavy.
+      const pageW = 595, pageH = 842, margin = 40, gap = 26
+      const toPt = pageW / el.offsetWidth                 // layout px → PDF points
       const blocks = [...el.children]
         .filter((c) => c.offsetHeight > 2)                // skip the injected <style> tag
         .map((c) => ({
-          srcTop: Math.round(c.offsetTop * scaleImg),
-          srcH: Math.max(1, Math.round(c.offsetHeight * scaleImg)),
+          node: c,
+          xPt: c.offsetLeft * toPt,
+          wPt: c.offsetWidth * toPt,
           hPt: c.offsetHeight * toPt,
+          scale: Math.min(target, Math.sqrt(MAX_PIXELS / (c.offsetWidth * c.offsetHeight))),
         }))
 
       const pages = []
@@ -271,24 +284,20 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
       if (page.length) pages.push(page)
 
       const pdf = new jsPDF({ unit: 'pt', format: 'a4' })
-      pages.forEach((pageBlocks, pi) => {
+      for (const [pi, pageBlocks] of pages.entries()) {
         if (pi > 0) pdf.addPage()
         pdf.setFillColor(240, 236, 228)               // cream page background
         pdf.rect(0, 0, pageW, pageH, 'F')
         const contentH = pageBlocks.reduce((s, b) => s + b.hPt, 0) + (pageBlocks.length - 1) * gap
         let y = pi === 0 ? margin : Math.max(margin, (pageH - contentH) / 2)  // header stays top; rest centered
         for (const b of pageBlocks) {
-          const cv = document.createElement('canvas')
-          cv.width = img.naturalWidth
-          cv.height = b.srcH
-          const cx = cv.getContext('2d')
-          cx.fillStyle = '#f0ece4'
-          cx.fillRect(0, 0, cv.width, cv.height)
-          cx.drawImage(img, 0, -b.srcTop)
-          pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, y, pageW, b.hPt, undefined, 'FAST')
+          await breathe()
+          const png = await toPng(b.node, { pixelRatio: b.scale, backgroundColor: bg, fontEmbedCSS })
+          await breathe()
+          pdf.addImage(png, 'PNG', b.xPt, y, b.wPt, b.hPt, undefined, 'FAST')
           y += b.hPt + gap
         }
-      })
+      }
       pdf.save(`${safeFileStem(projectTitle, 'CamLog-Wrapped')}.pdf`)
       setExported(true)
       setTimeout(() => setExported(false), 2500)

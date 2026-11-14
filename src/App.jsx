@@ -49,8 +49,13 @@ function restoreSaved() {
 // reload iOS forces after a share, so that reload restores at once instead of
 // waiting for a hand-off CamLog has already finished sending.
 const IMPORTED_KEY = 'wrapped:camlog-imported'
-// How long to wait for CamLog's CSV before falling back to the saved show.
-const CAMLOG_WAIT_MS = 6000
+// How long to wait for CamLog's CSV before falling back to the saved show. In
+// Shadow Mode, and on a big show, CamLog builds the CSV from the server, which
+// can take well over 6s (it was 6s, and Copperhead in Shadow Mode missed it).
+const CAMLOG_WAIT_MS = 20000
+// Keep asking for the CSV this long even after falling back, so a late one
+// still replaces the saved show instead of being lost.
+const CAMLOG_PING_MS = 60000
 
 // Opened by CamLog's Export button (a popup, so window.opener is set) and no show
 // received yet: the saved show may be a different project, so don't draw it.
@@ -167,7 +172,7 @@ export default function App() {
       ping()
       if (boot.awaiting) {
         pinger = setInterval(ping, 250)
-        giveUp = setTimeout(stopPinging, CAMLOG_WAIT_MS)
+        giveUp = setTimeout(stopPinging, CAMLOG_PING_MS)
       }
     }
     return () => {

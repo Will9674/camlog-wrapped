@@ -17,6 +17,14 @@ export function parseCSV(file) {
   })
 }
 
+// Synchronous parse of an in-memory string (Papa parses strings synchronously
+// when no worker or step callback is given). Used to restore the saved show
+// before the first frame, so the dashboard is the first thing drawn.
+export function parseCSVStringSync(str) {
+  const { header, skipEmptyLines, transformHeader, transform } = _papaOptions()
+  return Papa.parse(str, { header, skipEmptyLines, transformHeader, transform }).data
+}
+
 export function parseCSVString(str) {
   return new Promise((resolve, reject) => {
     Papa.parse(str, _papaOptions(resolve, reject))

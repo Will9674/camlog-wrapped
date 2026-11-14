@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import UploadScreen from './components/UploadScreen'
 import Dashboard from './components/Dashboard'
-import { parseCSVString, processData } from './utils/parseCSV'
+import { parseCSVString, parseCSVStringSync, processData } from './utils/parseCSV'
 import { sampleCsv, SAMPLE_TITLE } from './utils/sampleData'
 import { toProjectTitle, titleFromFilename } from './utils/format'
 
@@ -31,22 +31,31 @@ function writeSaved(saved) {
   }
 }
 
+// Parse the saved show synchronously, before the first render, so reopening
+// Wrapped draws the dashboard straight away: no upload screen and no blank frame
+// in between. Parsing in memory takes milliseconds even for a long feature.
+function restoreSaved() {
+  const saved = readSaved()
+  if (!saved) return null
+  try {
+    const rows = processData(parseCSVStringSync(saved.csv))
+    return rows.some((r) => r._scene) ? { rows, title: saved.title || '' } : null
+  } catch {
+    return null
+  }
+}
+
 export default function App() {
-  const [rows, setRows] = useState(null)
-  const [projectTitle, setProjectTitle] = useState('')
-  // Start in the loading state when a saved show is about to be restored, so the
-  // upload screen doesn't flash first.
-  const [loading, setLoading] = useState(() => !!readSaved())
-  // True only while that saved show is being restored on open. Until it lands we
-  // draw a blank page rather than the (dimmed) upload screen, which otherwise
-  // flashes before the dashboard appears.
-  const [restoring, setRestoring] = useState(() => !!readSaved())
+  const [restored] = useState(restoreSaved)
+  const [rows, setRows] = useState(() => restored?.rows ?? null)
+  const [projectTitle, setProjectTitle] = useState(() => restored?.title ?? '')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   // Bumped on every successful load so Dashboard remounts fresh for new data,
   // giving it a correct initial date range without syncing state in an effect.
   const [loadId, setLoadId] = useState(0)
-  // Only the newest load may land: a saved show restoring on open must not
-  // overwrite a CSV CamLog pushed in a moment later.
+  // Only the newest load may land: if an upload and a CSV pushed from CamLog
+  // overlap, the later one wins.
   const latestLoad = useRef(0)
 
   async function handleFile(file) {
@@ -95,7 +104,7 @@ export default function App() {
       setError('That file couldn’t be read as a CSV. Export a fresh log from CamLog or ZoeLog and try again.')
       console.error(e)
     } finally {
-      if (ticket === latestLoad.current) { setLoading(false); setRestoring(false) }
+      if (ticket === latestLoad.current) setLoading(false)
     }
   }
 
@@ -110,8 +119,6 @@ export default function App() {
       ingestCsvString(evt.data.csv, toProjectTitle(evt.data.name), { save: true })
     }
     window.addEventListener('message', onMessage)
-    const saved = readSaved()
-    if (saved) ingestCsvString(saved.csv, saved.title)
     if (window.opener) {
       try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://app.camlog.app') } catch { /* opener gone or cross-origin — ignore */ }
     }
@@ -135,8 +142,6 @@ export default function App() {
   if (rows) {
     return <Dashboard key={loadId} rows={rows} projectTitle={projectTitle} onTitleChange={handleTitleChange} onReset={handleReset} />
   }
-
-  if (restoring) return <div className="min-h-screen bg-(--c-bg)" />
 
   return <UploadScreen onFile={handleFile} onDemo={loadDemo} loading={loading} error={error} />
 }

@@ -125,7 +125,7 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
   const activeTabRef = useCallback((el) => {
     if (el) el.scrollIntoView({ inline: 'nearest', behavior: 'smooth' })
   }, [])
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [scopeOpen, setScopeOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exported, setExported] = useState(false)
@@ -245,6 +245,21 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
     return parts.length ? parts.join(' · ') : null
   }, [filters, dateMin, dateMax])
 
+  // Phone-only line above the view chips: says what the charts cover and opens the
+  // camera/date sheet. Describes itself rather than saying "Filters", which on a
+  // camera show means NDs.
+  const scopeLabel = useMemo(() => {
+    const cams = filters.cameras || []
+    const allCams = !cams.length || cams.includes('All')
+    const camPart = allCams ? 'All cameras' : `${cams.length === 1 ? 'Cam' : 'Cams'} ${cams.join(', ')}`
+    const [d0, d1] = filters.dateRange || []
+    const allDays = !d0 || !d1 || (d0 === dateMin && d1 === dateMax)
+    const dayPart = allDays ? 'All days'
+      : d0 === d1 ? fmtDate(d0).label
+      : `${fmtDate(d0).label} – ${fmtDate(d1).label}`
+    return { text: `${camPart} · ${dayPart}`, active: !allCams || !allDays }
+  }, [filters, dateMin, dateMax])
+
   const ViewComponent = {
     lens: LensView,
     support: SupportView,
@@ -281,17 +296,6 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
         </span>
         <EditableTitle value={projectTitle} onChange={onTitleChange} />
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen((s) => !s)}
-            className="sm:hidden text-(--c-ink2) hover:text-(--c-ink) transition-colors"
-            aria-label="Toggle filters"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <line x1="4" y1="6" x2="20" y2="6"/>
-              <line x1="8" y1="12" x2="20" y2="12"/>
-              <line x1="12" y1="18" x2="20" y2="18"/>
-            </svg>
-          </button>
           <ThemeToggleButton />
 
           {/* One Share button for everything going out: card images and the PDF
@@ -330,14 +334,41 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
           </nav>
         </aside>
 
-        {/* Mobile sidebar overlay */}
-        {sidebarOpen && (
-          <div className="sm:hidden fixed inset-0 z-40 flex">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-            <div className="relative z-50 w-72 bg-(--c-sidebar) flex flex-col overflow-y-auto">
-              <div className="px-8 pt-8 pb-8">
-                <SidebarContents {...sidebarProps} onNavClick={(id) => { setActiveView(id); setSidebarOpen(false) }} />
+        {/* Phone: cameras & dates in a bottom sheet. Views aren't repeated here,
+            the chip strip above the charts already switches them. */}
+        {scopeOpen && (
+          <div className="sm:hidden fixed inset-0 z-40 flex flex-col justify-end">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setScopeOpen(false)} />
+            <div
+              role="dialog"
+              aria-label="Cameras and dates"
+              className="relative z-50 bg-(--c-surface) border-t border-(--c-border) rounded-t-2xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-h-[85dvh] overflow-y-auto"
+            >
+              <div className="mx-auto mb-3 w-9 h-1 rounded-full bg-(--c-border-strong)" aria-hidden="true" />
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setFilters({ cameras: ['All'], dateRange: [dateMin, dateMax] })}
+                  disabled={!scopeLabel.active}
+                  className="text-xs font-['DM_Mono'] text-(--c-ink2) hover:text-(--c-ink) disabled:opacity-30 transition-colors"
+                >
+                  Reset
+                </button>
+                <span className="font-['DM_Mono'] text-sm font-medium text-(--c-ink)">Cameras &amp; Dates</span>
+                <button
+                  onClick={() => setScopeOpen(false)}
+                  className="text-xs font-['DM_Mono'] font-medium text-(--c-accent)"
+                >
+                  Done
+                </button>
               </div>
+              <FilterPanel
+                filters={filters}
+                onChange={setFilters}
+                dateMin={dateMin}
+                dateMax={dateMax}
+                availableCameras={availableCameras}
+                showRangeReset={false}
+              />
             </div>
           </div>
         )}
@@ -345,6 +376,22 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
         {/* Main content */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-6 sm:px-10 py-8">
+            {/* Phone: what the charts cover; tap for the cameras & dates sheet */}
+            <button
+              onClick={() => setScopeOpen(true)}
+              className={`sm:hidden mb-3 inline-flex max-w-full items-center gap-1.5 px-3 h-8 rounded-full border text-xs font-['DM_Mono'] transition-colors ${
+                scopeLabel.active
+                  ? 'border-transparent bg-(--c-accent)/10 text-(--c-accent)'
+                  : 'border-(--c-border) text-(--c-ink2)'
+              }`}
+              aria-label={`Showing ${scopeLabel.text}. Change cameras or dates`}
+            >
+              <span className="truncate">{scopeLabel.text}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="flex-shrink-0">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
             {/* Mobile nav tabs */}
             <div className="sm:hidden flex gap-1.5 overflow-x-auto pb-4 mb-2">
               {VIEWS.map((v) => (

@@ -1,6 +1,6 @@
 import { useTheme } from '../theme-context'
 
-export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [] }) {
+export default function FilterPanel({ filters, onChange, dateMin, dateMax, availableCameras = [], showRangeReset = true }) {
   useTheme() // subscribe so filter panel re-renders on theme change
   const { cameras, dateRange } = filters
 
@@ -68,13 +68,13 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
             onChange={(e) => onChange({ ...filters, dateRange: [dateRange[0], e.target.value] })}
             className={inputClass}
           />
-          <button
+          {showRangeReset && <button
             onClick={() => onChange({ ...filters, dateRange: [dateMin, dateMax] })}
             disabled={dateRange[0] === dateMin && dateRange[1] === dateMax}
             className="text-xs font-['DM_Mono'] text-left transition-colors text-(--c-ink3) hover:text-(--c-ink2) disabled:opacity-30 disabled:pointer-events-none"
           >
             Reset range
-          </button>
+          </button>}
         </div>
       </div>
     </div>

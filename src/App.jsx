@@ -37,6 +37,10 @@ export default function App() {
   // Start in the loading state when a saved show is about to be restored, so the
   // upload screen doesn't flash first.
   const [loading, setLoading] = useState(() => !!readSaved())
+  // True only while that saved show is being restored on open. Until it lands we
+  // draw a blank page rather than the (dimmed) upload screen, which otherwise
+  // flashes before the dashboard appears.
+  const [restoring, setRestoring] = useState(() => !!readSaved())
   const [error, setError] = useState(null)
   // Bumped on every successful load so Dashboard remounts fresh for new data,
   // giving it a correct initial date range without syncing state in an effect.
@@ -91,7 +95,7 @@ export default function App() {
       setError('That file couldn’t be read as a CSV. Export a fresh log from CamLog or ZoeLog and try again.')
       console.error(e)
     } finally {
-      if (ticket === latestLoad.current) setLoading(false)
+      if (ticket === latestLoad.current) { setLoading(false); setRestoring(false) }
     }
   }
 
@@ -131,6 +135,8 @@ export default function App() {
   if (rows) {
     return <Dashboard key={loadId} rows={rows} projectTitle={projectTitle} onTitleChange={handleTitleChange} onReset={handleReset} />
   }
+
+  if (restoring) return <div className="min-h-screen bg-(--c-bg)" />
 
   return <UploadScreen onFile={handleFile} onDemo={loadDemo} loading={loading} error={error} />
 }

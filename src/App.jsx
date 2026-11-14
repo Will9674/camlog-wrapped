@@ -45,8 +45,39 @@ function restoreSaved() {
   }
 }
 
+// Set in this tab once CamLog has handed over a show. sessionStorage survives the
+// reload iOS forces after a share, so that reload restores at once instead of
+// waiting for a hand-off CamLog has already finished sending.
+const IMPORTED_KEY = 'wrapped:camlog-imported'
+// How long to wait for CamLog's CSV before falling back to the saved show.
+const CAMLOG_WAIT_MS = 6000
+
+// Opened by CamLog's Export button (a popup, so window.opener is set) and no show
+// received yet: the saved show may be a different project, so don't draw it.
+function openedForCamLogImport() {
+  try { return !!window.opener && !sessionStorage.getItem(IMPORTED_KEY) } catch { return false }
+}
+
+function OpeningFromCamLog() {
+  // The note fades in only if the hand-off is slow; usually the show lands first.
+  return (
+    <div className="min-h-screen bg-(--c-bg) flex items-center justify-center">
+      <span className="font-['DM_Mono'] text-xs text-(--c-ink3) opacity-0 animate-[fadeIn_300ms_ease-out_700ms_forwards]">
+        Opening from CamLog…
+      </span>
+    </div>
+  )
+}
+
 export default function App() {
-  const [restored] = useState(restoreSaved)
+  const [boot] = useState(() => {
+    const awaiting = openedForCamLogImport()
+    return { awaiting, restored: awaiting ? null : restoreSaved() }
+  })
+  const restored = boot.restored
+  // While true, CamLog's CSV is on its way: show a quiet blank page, never the
+  // previously saved show (which flashed before the new one replaced it).
+  const [awaitingCamLog, setAwaitingCamLog] = useState(boot.awaiting)
   const [rows, setRows] = useState(() => restored?.rows ?? null)
   const [projectTitle, setProjectTitle] = useState(() => restored?.title ?? '')
   const [loading, setLoading] = useState(false)
@@ -104,7 +135,7 @@ export default function App() {
       setError('That file couldn’t be read as a CSV. Export a fresh log from CamLog or ZoeLog and try again.')
       console.error(e)
     } finally {
-      if (ticket === latestLoad.current) setLoading(false)
+      if (ticket === latestLoad.current) { setLoading(false); setAwaitingCamLog(false) }
     }
   }
 
@@ -116,6 +147,7 @@ export default function App() {
     function onMessage(evt) {
       if (evt.origin !== 'https://app.camlog.app') return
       if (evt.data?.type !== 'camlog-import') return
+      try { sessionStorage.setItem(IMPORTED_KEY, '1') } catch { /* storage unavailable */ }
       ingestCsvString(evt.data.csv, toProjectTitle(evt.data.name), { save: true })
     }
     window.addEventListener('message', onMessage)
@@ -124,6 +156,22 @@ export default function App() {
     }
     return () => window.removeEventListener('message', onMessage)
   }, [])
+
+  // CamLog never sent the CSV (closed, or something else opened this tab):
+  // fall back to the saved show, or the upload screen.
+  useEffect(() => {
+    if (!awaitingCamLog) return
+    const timer = setTimeout(() => {
+      const saved = restoreSaved()
+      if (saved) {
+        setRows(saved.rows)
+        setProjectTitle(saved.title)
+        setLoadId((n) => n + 1)
+      }
+      setAwaitingCamLog(false)
+    }, CAMLOG_WAIT_MS)
+    return () => clearTimeout(timer)
+  }, [awaitingCamLog])
 
   function handleReset() {
     setRows(null)
@@ -142,6 +190,8 @@ export default function App() {
   if (rows) {
     return <Dashboard key={loadId} rows={rows} projectTitle={projectTitle} onTitleChange={handleTitleChange} onReset={handleReset} />
   }
+
+  if (awaitingCamLog) return <OpeningFromCamLog />
 
   return <UploadScreen onFile={handleFile} onDemo={loadDemo} loading={loading} error={error} />
 }

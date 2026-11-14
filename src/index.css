@@ -90,3 +90,9 @@ html.light {
     filter: opacity(0.4);
   }
 }
+
+/* Used by the "Opening from CamLog…" note, which appears only if the hand-off is slow. */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

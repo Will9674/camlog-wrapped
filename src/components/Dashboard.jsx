@@ -64,7 +64,7 @@ function SidebarContents({ activeView, onNavClick, filters, onFiltersChange, dat
 // plumbing. Deliberately not persisted: a re-upload re-derives the title, and a stale
 // override would be harder to explain than retyping it.
 const TITLE_SHELL =
-  "flex-1 min-w-0 text-center lg:flex-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 font-['DM_Mono'] text-base sm:text-xl font-medium tracking-tight [overflow-wrap:anywhere]"
+  "flex-1 min-w-0 text-center lg:flex-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:max-w-[40%] font-['DM_Mono'] text-base sm:text-xl font-medium tracking-tight [overflow-wrap:anywhere]"
 
 // Header action buttons with a word label (Share, PDF).
 const ACTION_BTN_BASE = "h-8 px-2.5 sm:px-3 min-w-[3rem] flex items-center justify-center rounded-full border font-['DM_Mono'] text-xs font-medium transition-colors"
@@ -310,8 +310,7 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
           <button
             onClick={handleExport}
             disabled={exporting}
-            title="Export PDF"
-            className={`${ACTION_BTN_BASE} w-8 !px-0 !min-w-0 ${
+            className={`${ACTION_BTN_BASE} ${
               exportError
                 ? 'border-transparent text-(--c-accent) bg-(--c-accent)/10'
                 : exported
@@ -331,11 +330,7 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
+              'PDF'
             )}
           </button>
 

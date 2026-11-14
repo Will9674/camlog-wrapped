@@ -81,13 +81,15 @@ html.light {
     min-height: 100svh;
   }
 
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) opacity(0.4);
-    cursor: pointer;
-  }
+  /* Native controls (date picker icon, scrollbars) follow the APP theme, not the
+     OS setting, so the browser draws a light icon on dark and a dark one on
+     light. Don't invert it by hand: that double-flips when the OS is dark. */
+  html { color-scheme: dark; }
+  html.light { color-scheme: light; }
 
-  html.light input[type="date"]::-webkit-calendar-picker-indicator {
+  input[type="date"]::-webkit-calendar-picker-indicator {
     filter: opacity(0.4);
+    cursor: pointer;
   }
 }
 

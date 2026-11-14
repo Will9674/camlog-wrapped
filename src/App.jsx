@@ -143,19 +143,39 @@ export default function App() {
   // app.camlog.app, accept a CSV pushed via postMessage (so the user skips the
   // manual export/upload) and announce readiness. The listener is attached before
   // the ready ping so a fast reply from the opener can't race ahead of it.
+  //
+  // The ping repeats until the CSV arrives (or the wait runs out): CamLog only
+  // starts listening once it has built the CSV, so on a big show a single ping
+  // sent as this page loads can land before anyone is listening. CamLog answers
+  // the first ping it hears and stops listening, so repeats can't double-import.
   useEffect(() => {
+    let pinger = null
+    const stopPinging = () => { clearInterval(pinger); pinger = null }
+    function ping() {
+      try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://app.camlog.app') } catch { /* opener gone or cross-origin — ignore */ }
+    }
     function onMessage(evt) {
       if (evt.origin !== 'https://app.camlog.app') return
       if (evt.data?.type !== 'camlog-import') return
+      stopPinging()
       try { sessionStorage.setItem(IMPORTED_KEY, '1') } catch { /* storage unavailable */ }
       ingestCsvString(evt.data.csv, toProjectTitle(evt.data.name), { save: true })
     }
     window.addEventListener('message', onMessage)
+    let giveUp = null
     if (window.opener) {
-      try { window.opener.postMessage({ type: 'wrapped-ready' }, 'https://app.camlog.app') } catch { /* opener gone or cross-origin — ignore */ }
+      ping()
+      if (boot.awaiting) {
+        pinger = setInterval(ping, 250)
+        giveUp = setTimeout(stopPinging, CAMLOG_WAIT_MS)
+      }
     }
-    return () => window.removeEventListener('message', onMessage)
-  }, [])
+    return () => {
+      window.removeEventListener('message', onMessage)
+      stopPinging()
+      clearTimeout(giveUp)
+    }
+  }, [boot.awaiting])
 
   // CamLog never sent the CSV (closed, or something else opened this tab):
   // fall back to the saved show, or the upload screen.

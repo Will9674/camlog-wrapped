@@ -27,6 +27,17 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
     onChange({ ...filters, cameras: next })
   }
 
+  // A cleared field goes back to the show's first/last day (the callers pass
+  // that in), and the range can't be reversed: the field just edited wins and
+  // the other end moves to meet it.
+  function setRange(start, end, edited) {
+    if (start > end) {
+      if (edited === 'start') end = start
+      else start = end
+    }
+    onChange({ ...filters, dateRange: [start, end] })
+  }
+
   const isActive = (cam) =>
     cam === 'All' ? cameras.includes('All') || cameras.length === 0 : cameras.includes(cam)
 
@@ -59,7 +70,7 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
             min={dateMin}
             max={dateMax}
             value={dateRange[0]}
-            onChange={(e) => onChange({ ...filters, dateRange: [e.target.value, dateRange[1]] })}
+            onChange={(e) => setRange(e.target.value || dateMin, dateRange[1], 'start')}
             className={inputClass}
           />
           <input
@@ -67,7 +78,7 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
             min={dateMin}
             max={dateMax}
             value={dateRange[1]}
-            onChange={(e) => onChange({ ...filters, dateRange: [dateRange[0], e.target.value] })}
+            onChange={(e) => setRange(dateRange[0], e.target.value || dateMax, 'end')}
             className={inputClass}
           />
           {showRangeReset && <button

@@ -34,8 +34,7 @@
     <!-- Paint the right background on the very first frame, before the app's
          stylesheet and script load: the saved theme is applied here rather than
          after React starts, so the page never shows white, or dark-then-light. -->
-    <meta name="color-scheme" content="dark light" />
-    <style>html{background:#111111}html.light{background:#f2f2f7}</style>
+    <style>html{background:#111111;color-scheme:dark}html.light{background:#f2f2f7;color-scheme:light}</style>
     <script>try{if(localStorage.getItem('camlog-theme')==='light')document.documentElement.classList.add('light')}catch(e){}</script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

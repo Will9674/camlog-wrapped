@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react'
 import { ThemeContext, useTheme } from './theme-context'
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('camlog-theme') || 'dark')
+  // Storage can be blocked (private mode, strict settings); the theme then just
+  // isn't remembered, rather than the whole app failing to start.
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('camlog-theme') || 'dark' } catch { return 'dark' }
+  })
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light')
-    localStorage.setItem('camlog-theme', theme)
+    try { localStorage.setItem('camlog-theme', theme) } catch { /* storage unavailable */ }
   }, [theme])
 
   return (

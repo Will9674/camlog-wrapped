@@ -498,7 +498,10 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
       />
     )}
     {exporting && (
-      <div className="fixed inset-0 z-[10000] bg-(--c-bg)/80" />
+      <div className="fixed inset-0 z-[10000] bg-(--c-bg)/85 flex items-center justify-center gap-3 font-['DM_Mono'] text-sm text-(--c-ink)" role="status">
+        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        Making PDF…
+      </div>
     )}
     </>
   )

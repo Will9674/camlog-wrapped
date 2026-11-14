@@ -118,6 +118,90 @@ function EditableTitle({ value, onChange }) {
   )
 }
 
+// Phone bottom sheet for cameras & dates. Drag down anywhere on it to close
+// (past 100px, or a quick flick); a shorter drag springs back.
+function ScopeSheet({ onClose, canReset, onReset, children }) {
+  const sheetRef = useRef(null)
+  const drag = useRef(null)
+  const [scrolls, setScrolls] = useState(false)
+
+  // Only a sheet taller than the screen needs to scroll itself; otherwise every
+  // vertical touch belongs to the drag.
+  useEffect(() => {
+    const el = sheetRef.current
+    if (el) setScrolls(el.scrollHeight > el.clientHeight + 1)
+  }, [])
+
+  function slideOut() {
+    const el = sheetRef.current
+    if (!el) return onClose()
+    el.style.transition = 'transform 180ms ease-in'
+    el.style.transform = 'translateY(100%)'
+    setTimeout(onClose, 180)
+  }
+
+  function onTouchStart(e) {
+    if (sheetRef.current.scrollTop > 0) return
+    drag.current = { y: e.touches[0].clientY, t: Date.now(), dy: 0 }
+  }
+  function onTouchMove(e) {
+    const d = drag.current
+    if (!d) return
+    d.dy = Math.max(0, e.touches[0].clientY - d.y)
+    const el = sheetRef.current
+    el.style.transition = 'none'
+    el.style.transform = d.dy ? `translateY(${d.dy}px)` : ''
+  }
+  function onTouchEnd() {
+    const d = drag.current
+    drag.current = null
+    if (!d || !d.dy) return
+    const speed = d.dy / Math.max(1, Date.now() - d.t)   // px per ms
+    if (d.dy > 100 || (d.dy > 30 && speed > 0.5)) return slideOut()
+    const el = sheetRef.current
+    el.style.transition = 'transform 200ms ease-out'
+    el.style.transform = ''
+  }
+
+  const headBtn = "h-9 px-3.5 rounded-full text-sm font-['DM_Mono'] transition-colors"
+  return (
+    <div className="sm:hidden fixed inset-0 z-40 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/50" onClick={slideOut} />
+      <div
+        ref={sheetRef}
+        role="dialog"
+        aria-label="Cameras and dates"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+        style={{ touchAction: scrolls ? 'pan-y' : 'none' }}
+        className="relative z-50 bg-(--c-surface) border-t border-(--c-border) rounded-t-2xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-h-[85dvh] overflow-y-auto overscroll-contain"
+      >
+        <div className="mx-auto mb-3 w-10 h-1.5 rounded-full bg-(--c-border-strong)" aria-hidden="true" />
+        <div className="flex items-center justify-between mb-4">
+          {/* Reset is a bordered button while there's something to reset, and
+              plainly greyed out when everything is already showing. */}
+          <button
+            onClick={onReset}
+            disabled={!canReset}
+            className={`${headBtn} border ${canReset
+              ? 'border-(--c-border-strong) text-(--c-ink) hover:bg-(--c-nav-hover-bg)'
+              : 'border-transparent text-(--c-ink3) opacity-40'}`}
+          >
+            Reset
+          </button>
+          <span className="font-['DM_Mono'] text-sm font-medium text-(--c-ink)">Cameras &amp; Dates</span>
+          <button onClick={slideOut} className={`${headBtn} font-medium bg-(--c-accent) text-white`}>
+            Done
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }) {
   const [activeView, setActiveView] = useState('lens')
   // Stable identity: React re-attaches this ref to whichever tab becomes active,
@@ -251,14 +335,16 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
   const scopeLabel = useMemo(() => {
     const cams = filters.cameras || []
     const allCams = !cams.length || cams.includes('All')
-    const camPart = allCams ? 'All cameras' : `${cams.length === 1 ? 'Cam' : 'Cams'} ${cams.join(', ')}`
+    // Listed in the show's camera order, not the order they were tapped.
+    const picked = availableCameras.filter((c) => cams.includes(c))
+    const camPart = allCams ? 'All cameras' : `${picked.length === 1 ? 'Camera' : 'Cameras'}: ${picked.join(', ')}`
     const [d0, d1] = filters.dateRange || []
     const allDays = !d0 || !d1 || (d0 === dateMin && d1 === dateMax)
     const dayPart = allDays ? 'All days'
       : d0 === d1 ? fmtDate(d0).label
       : `${fmtDate(d0).label} – ${fmtDate(d1).label}`
     return { text: `${camPart} · ${dayPart}`, active: !allCams || !allDays }
-  }, [filters, dateMin, dateMax])
+  }, [filters, dateMin, dateMax, availableCameras])
 
   const ViewComponent = {
     lens: LensView,
@@ -337,40 +423,20 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
         {/* Phone: cameras & dates in a bottom sheet. Views aren't repeated here,
             the chip strip above the charts already switches them. */}
         {scopeOpen && (
-          <div className="sm:hidden fixed inset-0 z-40 flex flex-col justify-end">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setScopeOpen(false)} />
-            <div
-              role="dialog"
-              aria-label="Cameras and dates"
-              className="relative z-50 bg-(--c-surface) border-t border-(--c-border) rounded-t-2xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-h-[85dvh] overflow-y-auto"
-            >
-              <div className="mx-auto mb-3 w-9 h-1 rounded-full bg-(--c-border-strong)" aria-hidden="true" />
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={() => setFilters({ cameras: ['All'], dateRange: [dateMin, dateMax] })}
-                  disabled={!scopeLabel.active}
-                  className="text-xs font-['DM_Mono'] text-(--c-ink2) hover:text-(--c-ink) disabled:opacity-30 transition-colors"
-                >
-                  Reset
-                </button>
-                <span className="font-['DM_Mono'] text-sm font-medium text-(--c-ink)">Cameras &amp; Dates</span>
-                <button
-                  onClick={() => setScopeOpen(false)}
-                  className="text-xs font-['DM_Mono'] font-medium text-(--c-accent)"
-                >
-                  Done
-                </button>
-              </div>
-              <FilterPanel
-                filters={filters}
-                onChange={setFilters}
-                dateMin={dateMin}
-                dateMax={dateMax}
-                availableCameras={availableCameras}
-                showRangeReset={false}
-              />
-            </div>
-          </div>
+          <ScopeSheet
+            onClose={() => setScopeOpen(false)}
+            canReset={scopeLabel.active}
+            onReset={() => setFilters({ cameras: ['All'], dateRange: [dateMin, dateMax] })}
+          >
+            <FilterPanel
+              filters={filters}
+              onChange={setFilters}
+              dateMin={dateMin}
+              dateMax={dateMax}
+              availableCameras={availableCameras}
+              showRangeReset={false}
+            />
+          </ScopeSheet>
         )}
 
         {/* Main content */}

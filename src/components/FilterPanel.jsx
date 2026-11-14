@@ -8,7 +8,9 @@ export default function FilterPanel({ filters, onChange, dateMin, dateMax, avail
   const btnBase = `px-2.5 py-1.5 rounded-lg border text-xs font-['DM_Mono'] transition-colors`
   const btnActive = 'bg-(--c-accent) text-white border-transparent'
   const btnInactive = 'bg-transparent text-(--c-nav-fg) border-(--c-border) hover:text-(--c-nav-fg-hover) hover:border-(--c-border-strong)'
-  const inputClass = 'w-full border border-(--c-border) rounded-lg px-2 py-1.5 text-xs font-["DM_Mono"] bg-(--c-surface) text-(--c-ink) focus:outline-none focus:border-(--c-border-strong)'
+  // appearance-none + min-w-0 + min-h: iOS draws date inputs natively and ignores
+  // width:100%, so without these they run off the right edge of the sheet.
+  const inputClass = 'block w-full min-w-0 min-h-[2.5rem] appearance-none [-webkit-appearance:none] [&::-webkit-date-and-time-value]:text-left border border-(--c-border) rounded-lg px-2 py-1.5 text-xs font-["DM_Mono"] bg-(--c-surface) text-(--c-ink) focus:outline-none focus:border-(--c-border-strong)'
 
   function toggleCamera(cam) {
     let next

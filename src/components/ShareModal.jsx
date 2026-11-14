@@ -241,7 +241,7 @@ export default function ShareModal({ rows, stats, projectTitle, onClose, pdf }) 
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-(--c-border) flex-shrink-0">
-            <span className="font-['DM_Mono'] text-sm font-medium text-(--c-ink)">Share</span>
+            <span className="font-['DM_Mono'] text-lg font-medium tracking-tight text-(--c-ink)">Share Image</span>
             <button
               onClick={onClose}
               className="w-7 h-7 flex items-center justify-center rounded-full text-(--c-ink2) hover:text-(--c-ink) hover:bg-(--c-nav-hover-bg) transition-colors"
@@ -379,28 +379,47 @@ export default function ShareModal({ rows, stats, projectTitle, onClose, pdf }) 
 
           {/* Share / Save — native share sheet on capable devices, download otherwise.
               The header has only one Share button, so the PDF lives here too (below). */}
-          <div className="px-5 pb-3 pt-1.5 border-t border-(--c-border) flex-shrink-0">
+          <div className="px-5 pb-2.5 pt-2 border-t border-(--c-border) flex-shrink-0">
             {canShareFiles ? (
-              <button
-                onClick={handleShare}
-                disabled={sharing}
-                className={`w-full h-10 rounded-xl text-sm font-['DM_Mono'] font-medium transition-colors flex items-center justify-center gap-2 ${
-                  shareError || shared
-                    ? 'bg-(--c-accent)/20 text-(--c-accent)'
-                    : 'bg-(--c-accent) text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-default'
-                }`}
-              >
-                {sharing ? 'Preparing…' : shareError ? 'Share failed' : shared ? 'Shared!' : (
-                  <>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
-                      <polyline points="16 6 12 2 8 6"/>
-                      <line x1="12" y1="2" x2="12" y2="15"/>
-                    </svg>
-                    Share image
-                  </>
-                )}
-              </button>
+              // One row: Share is the main action, Save its outlined neighbour.
+              <div className="flex gap-2">
+                <button
+                  onClick={handleShare}
+                  disabled={sharing}
+                  className={`flex-1 h-10 rounded-xl text-sm font-['DM_Mono'] font-medium transition-colors flex items-center justify-center gap-2 ${
+                    shareError || shared
+                      ? 'bg-(--c-accent)/20 text-(--c-accent)'
+                      : 'bg-(--c-accent) text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-default'
+                  }`}
+                >
+                  {sharing ? 'Preparing…' : shareError ? 'Share failed' : shared ? 'Shared!' : (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
+                        <polyline points="16 6 12 2 8 6"/>
+                        <line x1="12" y1="2" x2="12" y2="15"/>
+                      </svg>
+                      Share
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleExport}
+                  disabled={exporting}
+                  className="flex-1 h-10 rounded-xl border border-(--c-border) text-sm font-['DM_Mono'] text-(--c-ink) hover:border-(--c-border-strong) hover:bg-(--c-nav-hover-bg) transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {exporting ? 'Saving…' : exportError ? 'Save failed' : exported ? 'Saved!' : (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>
+                        <polyline points="8 11 12 15 16 11"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Save
+                    </>
+                  )}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleExport}
@@ -412,15 +431,6 @@ export default function ShareModal({ rows, stats, projectTitle, onClose, pdf }) 
                 }`}
               >
                 {exporting ? 'Saving…' : exportError ? 'Export failed' : exported ? 'Saved!' : exportLabel}
-              </button>
-            )}
-            {canShareFiles && (
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                className="w-full mt-1.5 h-8 rounded-lg text-xs font-['DM_Mono'] text-(--c-ink2) hover:text-(--c-ink) transition-colors disabled:opacity-50"
-              >
-                {exporting ? 'Saving…' : exportError ? 'Save failed' : exported ? 'Saved!' : 'Save image'}
               </button>
             )}
           </div>

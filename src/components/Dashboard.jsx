@@ -236,12 +236,12 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
 
       // Each block of the print layout (header, stat rows, each chart) is rendered
       // on its own rather than the whole report as one image:
-      //  - Sharpness: a block renders at 4× on a computer (~380 dpi on A4), 3× on
-      //    a phone; side by side, 4× and 5× text is indistinguishable even zoomed.
-      //    One whole-report image hit html-to-image's 16,384px cap on a long
-      //    feature and was quietly shrunk.
+      //  - Sharpness: every block renders at 6× (Will compared a 4× PDF on his Mac
+      //    and could see the drop, so keep 6×). One whole-report image hit
+      //    html-to-image's 16,384px cap on a long feature and was quietly shrunk.
       //  - iPhones: Safari can't draw a canvas over ~16.7M pixels (a whole long
-      //    report at 3× was ~21M). Each block's scale is capped to stay under it.
+      //    report at 3× was ~21M). Copperhead's tallest block at 6× is ~14.7M;
+      //    a taller one is scaled down just enough to fit.
       //  - No freeze: rendering the whole report blocked the page for ~6s on a
       //    long feature. When opened from CamLog this window shares CamLog's
       //    thread (same site, opened as a popup), so CamLog froze too and
@@ -249,8 +249,12 @@ export default function Dashboard({ rows, projectTitle, onTitleChange, onReset }
       const { toPng, getFontEmbedCSS } = await import('html-to-image')
       const { jsPDF } = await import('jspdf')
       const bg = '#f0ece4'
-      const target = window.innerWidth < 640 ? 3 : 4
-      const MAX_PIXELS = 16_000_000
+      // 6× everywhere, the original desktop quality. Phones and tablets
+      // (touch) cap each block at 16M px, under iOS Safari's ~16.7M canvas
+      // limit; a computer's limit is far higher. html-to-image also caps any
+      // side at 16,384px, which no single block reaches at 6×.
+      const target = 6
+      const MAX_PIXELS = navigator.maxTouchPoints > 0 ? 16_000_000 : 120_000_000
       const breathe = () => new Promise((r) => setTimeout(r, 0))
 
       // Fonts are embedded once and reused for every block; the 1× pass warms
